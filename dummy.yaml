@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dummy-page
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dummy-page
+  template:
+    metadata:
+      labels:
+        app: dummy-page
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html/index.html
+          subPath: index.html
+      volumes:
+      - name: html
+        configMap:
+          name: dummy-page-html
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dummy-page-html
+  namespace: default
+data:
+  index.html: |
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Coming Soon</title>
+      </head>
+      <body style="text-align:center;margin-top:50px;">
+        <h1>⚙️ Service Starting…</h1>
+        <p>Please check back in a moment.</p>
+      </body>
+    </html>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dummy-service
+  namespace: default
+spec:
+  selector:
+    app: dummy-page
+  ports:
+    - port: 80
+      targetPort: 80
+

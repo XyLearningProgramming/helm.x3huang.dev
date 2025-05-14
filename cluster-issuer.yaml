@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory  # Let’s Encrypt production endpoint :contentReference[oaicite:5]{index=5}
+    email: info@x3huang.dev                                 # contact email :contentReference[oaicite:6]{index=6}
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+      - http01:
+          ingress:
+            class: traefik                                  # match your Ingress class :contentReference[oaicite:7]{index=7}
+

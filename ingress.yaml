@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: default-service-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: traefik                      # or your controller’s class :contentReference[oaicite:9]{index=9}
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"      # points at our ClusterIssuer :contentReference[oaicite:10]{index=10}
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - x3huang.dev                                       # domain :contentReference[oaicite:11]{index=11}
+      secretName: x3huang-dev-tls                           # TLS secret to be created :contentReference[oaicite:12]{index=12}
+  rules:
+    - host: x3huang.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dummy-service                       # service name
+                port:
+                  number: 80
+
