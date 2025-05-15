@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-ingress
+  namespace: {{ .Values.namespace }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingressClass | default "traefik" }}
+    cert-manager.io/cluster-issuer: "{{ .Values.clusterIssuer.name }}"
+spec:
+  ingressClassName: {{ .Values.ingressClass | default "traefik" }}
+  resources:
+    {{- toYaml .Values.resources | nindent 4 }}  
+  tls:
+    - hosts:
+        - {{ .Values.env.DOMAIN }}
+      secretName: {{ .Values.env.DOMAIN }}-tls
+  rules:
+    - host: {{ .Values.env.DOMAIN }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ required "dummy-page.fullname template not found" (include "dummy-page.fullname" .) }}
+                port:
+                  number: {{ .Values.dummyPage.service.port | default 80 }}

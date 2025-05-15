@@ -1,0 +1,52 @@
+# helmfile.yaml
+helmDefaults:
+  timeout: 600
+  wait: true
+  atomic: true
+
+# Environment-specific settings
+environments:
+  test:
+    values:
+      - values/test.yaml
+  prod:
+    values:
+      - values/prod.yaml
+---
+# Repositories
+repositories:
+  - name: jetstack
+    url: https://charts.jetstack.io
+---
+# Cert-Manager Chart
+releases:
+  - name: cert-manager
+    namespace: cert-manager
+    chart: jetstack/cert-manager
+    version: v1.11.0
+    installed: false
+    values:
+      - "{{ .Environment.Values | default }}"
+    set:
+      - name: installCRDs
+        value: true
+      - name: prometheus.enabled
+        value: false
+      - name: webhook.timeoutSeconds
+        value: 10
+
+# Dummy Service
+  - name: dummy-page
+    namespace: default
+    chart: ./dummy-page
+    values:
+      - "{{ .Environment.Values | default }}"
+
+# Ingress Settings
+  - name: ingress
+    namespace: default
+    chart: ./ingress-cert
+    values:
+      - "{{ .Environment.Values | default }}"
+    dependencies:
+      - chart: ./dummy-page
