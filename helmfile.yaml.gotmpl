@@ -50,8 +50,8 @@ releases:
   - name: ingress
     namespace: default
     chart: ./ingress-cert
-    needs:
-      - cert-manager/cert-manager
+    # needs:
+    #   - cert-manager/cert-manager
     values:
       - values/{{ .Environment.Name }}.yaml
       - namespace: default
