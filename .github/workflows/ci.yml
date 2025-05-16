@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Helm & Helmfile
         uses: helmfile/helmfile-action@v2.0.4
@@ -40,7 +40,8 @@ jobs:
 
       - name: Upload rendered manifests only when pushed to main
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: helmfile-manifests
           path: rendered/
+          if-no-files-found: error
