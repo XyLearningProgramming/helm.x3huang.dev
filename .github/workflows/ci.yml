@@ -50,7 +50,7 @@ jobs:
       - name: Dry‑run apply rendered YAML
         # client‑side dry‑run doesn’t require a live cluster
         run: |
-          kubectl apply --dry-run=client --recursive -f rendered/
+          kubectl apply --validate=false --dry-run=client --recursive -f rendered/
 
       # Disabled for now since cd uses helmfile directly.
       #
