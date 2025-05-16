@@ -19,8 +19,8 @@ jobs:
       - name: Setup Helm & Helmfile
         uses: helmfile/helmfile-action@v2.0.4
         with:
-          helmfile-version: 'v0.150.0'
-          helm-version: 'v3.11.0'
+          helmfile-version: 'v1.0.0'
+          helm-version: 'v3.17.3'
           helm-plugins: https://github.com/databus23/helm-diff
           helmfile-args: init
 
