@@ -22,9 +22,3 @@ version: 0.1.0
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "1.0.0"
-
-# dependencies:
-#   - name: dummy-page
-#     alias: dummy-page
-#     version: 0.1.0
-#     repository: "file://../dummy-page"
