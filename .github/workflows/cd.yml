@@ -1,12 +1,9 @@
-# .github/workflows/cd.yml
 name: CD Helmfile
 
 on:
-  workflow_run:
-    workflows: ["CI Helmfile"]
-    types:
-      - success
-
+  push:
+    branches:
+      - main
 jobs:
   deploy:
     name: Deploy to VPS
@@ -30,12 +27,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download rendered manifests from CI
-        uses: actions/download-artifact@v4
-        with:
-          name: helmfile-manifests
-          # artifacts come from the triggering workflow_run
-          # run-id: ${{ github.event.workflow_run.id }}
+      # - name: Download rendered manifests from CI
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: helmfile-manifests
+      #     # artifacts come from the triggering workflow_run
+      #     # run-id: ${{ github.event.workflow_run.id }}
 
       # (A) generate a release timestamp
       - name: Set release timestamp
@@ -60,7 +57,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           certificate: ${{ secrets.SSH_CERTIFICATE }}
           port: ${{ secrets.SSH_PORT }}
-          source: ${{ github.workspace }}/helmfile-manifests
+          source: ./
           target: "~/deploy/helmfile/releases/${{ env.RELEASE_TS }}"
 
       # (C) SSH in, rotate current → releases, symlink new, and helmfile diff/apply

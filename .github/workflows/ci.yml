@@ -59,10 +59,10 @@ jobs:
       #   run: |
       #     kubectl apply --dry-run=server --recursive -f rendered/
 
-      - name: Upload rendered manifests only on main
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: helmfile-manifests
-          path: ./
-          if-no-files-found: error
+      # - name: Upload rendered manifests only on main
+      #   if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: helmfile-manifests
+      #     path: ./
+      #     if-no-files-found: error
