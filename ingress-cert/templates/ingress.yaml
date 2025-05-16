@@ -12,10 +12,10 @@ spec:
     {{- toYaml .Values.resources | nindent 4 }}  
   tls:
     - hosts:
-        - {{ .Values.env.DOMAIN }}
-      secretName: {{ .Values.env.DOMAIN }}-tls
+        - {{ .Values.DOMAIN }}
+      secretName: {{ .Values.DOMAIN }}-tls
   rules:
-    - host: {{ .Values.env.DOMAIN }}
+    - host: {{ .Values.DOMAIN }}
       http:
         paths:
           - path: /
@@ -24,4 +24,4 @@ spec:
               service:
                 name: {{ required "dummy-page.fullname template not found" (include "dummy-page.fullname" .) }}
                 port:
-                  number: {{ .Values.dummyPage.service.port | default 80 }}
+                  number: {{ include "dummy-page.service.port" . | default 80 }}

@@ -6,9 +6,9 @@ helmDefaults:
 
 # Environment-specific settings
 environments:
-  test:
+  default:
     values:
-      - values/test.yaml
+      - values/default.yaml
   prod:
     values:
       - values/prod.yaml
@@ -24,12 +24,15 @@ releases:
     namespace: cert-manager
     chart: jetstack/cert-manager
     version: v1.11.0
-    installed: false
+    installed: {{ ne .Environment.Name "prod" }}
     values:
-      - "{{ .Environment.Values | default }}"
+      - values/{{ .Environment.Name }}.yaml
+      - namespace: cert-manager
     set:
+      # one time install crd first
+      # kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
       - name: installCRDs
-        value: true
+        value: false
       - name: prometheus.enabled
         value: false
       - name: webhook.timeoutSeconds
@@ -40,13 +43,18 @@ releases:
     namespace: default
     chart: ./dummy-page
     values:
-      - "{{ .Environment.Values | default }}"
+      - values/{{ .Environment.Name }}.yaml
+      - namespace: default
 
 # Ingress Settings
   - name: ingress
     namespace: default
     chart: ./ingress-cert
+    needs:
+      - cert-manager/cert-manager
     values:
-      - "{{ .Environment.Values | default }}"
+      - values/{{ .Environment.Name }}.yaml
+      - namespace: default
     dependencies:
       - chart: ./dummy-page
+        version: 0.1.0

@@ -127,3 +127,6 @@ temp/
 
 # Vscode
 .vscode
+
+# Output file for rendered
+rendered/
