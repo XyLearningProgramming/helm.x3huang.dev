@@ -37,10 +37,10 @@ jobs:
         run: |
           helmfile lint
 
-      - name: Show planned changes (diff)
-        run: |
-          helmfile -e prod diff
-        continue-on-error: true
+      # - name: Show planned changes (diff)
+      #   run: |
+      #     helmfile -e prod diff
+      #   continue-on-error: true
 
       - name: Render full manifests
         run: |

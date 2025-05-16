@@ -5,17 +5,12 @@ on:
   workflow_run:
     workflows: ["CI Helmfile"]
     types:
-      - completed
+      - success
 
 jobs:
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
-
-    # only run after CI succeeded and pushing to main
-    if: >-
-      ${{ github.event.workflow_run.conclusion == 'success' &&
-         github.event.workflow_run.event == 'push' }}
 
     # require manual approval in GitHub → Settings → Environments → production
     environment:
@@ -23,6 +18,15 @@ jobs:
       # you can add URL, reviewers, etc. in the UI
 
     steps:
+      - name: Manual approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: ${{ github.actor }} # myself
+          minimum-approvals: 1
+          exclude-workflow-initiator-as-approver: false
+          fail-on-denial: true
+
       - name: Checkout code
         uses: actions/checkout@v4
 
