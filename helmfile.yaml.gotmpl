@@ -1,0 +1,60 @@
+# helmfile.yaml
+helmDefaults:
+  timeout: 600
+  wait: true
+  atomic: true
+
+# Environment-specific settings
+environments:
+  default:
+    values:
+      - values/default.yaml
+  prod:
+    values:
+      - values/prod.yaml
+---
+# Repositories
+repositories:
+  - name: jetstack
+    url: https://charts.jetstack.io
+---
+# Cert-Manager Chart
+releases:
+  - name: cert-manager
+    namespace: cert-manager
+    chart: jetstack/cert-manager
+    version: v1.11.0
+    installed: {{ ne .Environment.Name "prod" }}
+    values:
+      - values/{{ .Environment.Name }}.yaml
+      - namespace: cert-manager
+    set:
+      # one time install crd first
+      # kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
+      - name: installCRDs
+        value: false
+      - name: prometheus.enabled
+        value: false
+      - name: webhook.timeoutSeconds
+        value: 10
+
+# Dummy Service
+  - name: dummy-page
+    namespace: default
+    chart: ./dummy-page
+    values:
+      - values/{{ .Environment.Name }}.yaml
+      - namespace: default
+
+# Ingress Settings
+  - name: ingress
+    namespace: default
+    chart: ./ingress-cert
+    needs:
+      - cert-manager/cert-manager
+    values:
+      - values/{{ .Environment.Name }}.yaml
+      - namespace: default
+    dependencies:
+      - chart: ./dummy-page
+        version: 0.1.0

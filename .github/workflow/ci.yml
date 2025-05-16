@@ -1,0 +1,46 @@
+# .github/workflows/ci.yml
+name: CI Helmfile
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-dry-run:
+    name: Lint, Render, Dry‑Run, Upload
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Helm & Helmfile
+        uses: helmfile/helmfile-action@v2.0.4
+        with:
+          helmfile-version: 'v0.150.0'
+          helm-version: 'v3.11.0'
+          helm-plugins: https://github.com/databus23/helm-diff
+          helmfile-args: init
+
+      - name: Lint all charts
+        run: |
+          helmfile lint
+
+      - name: Render full manifests
+        run: |
+          mkdir -p rendered
+          helmfile template -e prod --output-dir rendered
+
+      - name: Dry‑run apply rendered YAML
+        # client‑side dry‑run doesn’t require a live cluster
+        run: |
+          kubectl apply --dry-run=client -f rendered/
+
+      - name: Upload rendered manifests only when pushed to main
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: helmfile-manifests
+          path: rendered/

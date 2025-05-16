@@ -1,4 +1,0 @@
-prometheus:
-  enabled: false            # built-in metrics exporter
-webhook:
-  timeoutSeconds: 10

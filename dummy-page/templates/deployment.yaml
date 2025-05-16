@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dummy-page.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ include "dummy-page.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "dummy-page.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "dummy-page.fullname" . }}
+    spec:
+      serviceAccountName: {{ include "dummy-page.fullname" . }}
+      containers:
+        - name: nginx
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+      resources:
+        {{- toYaml .Values.resources | nindent 8 }}  
+      volumes:
+        - name: html
+          configMap:
+            name: {{ include "dummy-page.fullname" . }}-html
