@@ -1,0 +1,90 @@
+name: CD Helmfile
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+
+    # require manual approval in GitHub → Settings → Environments → production
+    environment:
+      name: prod
+      # you can add URL, reviewers, etc. in the UI
+
+    steps:
+      - name: Manual approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: ${{ github.actor }} # myself
+          minimum-approvals: 1
+          exclude-workflow-initiator-as-approver: false
+          fail-on-denial: true
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # - name: Download rendered manifests from CI
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: helmfile-manifests
+      #     # artifacts come from the triggering workflow_run
+      #     # run-id: ${{ github.event.workflow_run.id }}
+
+      # (A) generate a release timestamp
+      - name: Set release timestamp
+        run: echo "RELEASE_TS=$(date +'%Y%m%dT%H%M%SZ')" >> $GITHUB_ENV
+
+      # (B) ensure target path exists on VPS
+      - name: Ensure release directory exists
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          certificate: ${{ secrets.SSH_CERTIFICATE }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            mkdir -p ~/deploy/helmfile/releases/${{ env.RELEASE_TS }}
+
+      # (C) copy *everything* into that new release folder
+      - name: Transfer full repo to VPS under release dir
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          certificate: ${{ secrets.SSH_CERTIFICATE }}
+          port: ${{ secrets.SSH_PORT }}
+          source: ./
+          target: "~/deploy/helmfile/releases/${{ env.RELEASE_TS }}"
+
+      # (C) SSH in, rotate current → releases, symlink new, and helmfile diff/apply
+      - name: SSH & deploy with Helmfile
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          certificate: ${{ secrets.SSH_CERTIFICATE }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -ex
+
+            DEPLOY_BASE=~/deploy/helmfile
+            RELEASES=$DEPLOY_BASE/releases
+            CURRENT=$DEPLOY_BASE/current
+            TS=${RELEASE_TS}
+
+            # rotate out the old "current"
+            if [ -L "$CURRENT" ] || [ -d "$CURRENT" ]; then
+              mv "$CURRENT" "$RELEASES/$TS-prev"
+            fi
+
+            # point "current" at the new release
+            ln -sfn "$RELEASES/$TS" "$CURRENT"
+            cd "$CURRENT"
+
+            # show planned changes, then deploy
+            helmfile -e prod diff || true
+            helmfile -e prod apply
