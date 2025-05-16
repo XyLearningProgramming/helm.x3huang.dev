@@ -44,10 +44,16 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_CERTIFICATE }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
             mkdir -p ~/deploy/helmfile/releases/${{ env.RELEASE_TS }}
+
+      - name: Debug Secrets
+        run: |
+          echo "HOST: ${{ secrets.SSH_HOST }}"
+          echo "USERNAME: ${{ secrets.SSH_USERNAME }}"
+          test -n "${{ secrets.SSH_PRIVATE_KEY }}" && echo "Private key is set"
 
       # (C) copy *everything* into that new release folder
       - name: Transfer full repo to VPS under release dir
@@ -55,7 +61,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_CERTIFICATE }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: ./
           target: "~/deploy/helmfile/releases/${{ env.RELEASE_TS }}"
@@ -66,7 +72,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_CERTIFICATE }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
             set -ex
