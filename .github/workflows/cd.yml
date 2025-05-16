@@ -15,14 +15,14 @@ jobs:
     environment: prod
 
     steps:
-      - name: Manual approval
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: ${{ github.actor }} # myself
-          minimum-approvals: 1
-          exclude-workflow-initiator-as-approver: false
-          fail-on-denial: true
+      # - name: Manual approval
+      #   uses: trstringer/manual-approval@v1
+      #   with:
+      #     secret: ${{ github.TOKEN }}
+      #     approvers: ${{ github.actor }} # myself
+      #     minimum-approvals: 1
+      #     exclude-workflow-initiator-as-approver: false
+      #     fail-on-denial: true
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -44,7 +44,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          certificate: ${{ secrets.SSH_CERTIFICATE }}
+          key: ${{ secrets.SSH_CERTIFICATE }}
           port: ${{ secrets.SSH_PORT }}
           script: |
             mkdir -p ~/deploy/helmfile/releases/${{ env.RELEASE_TS }}
@@ -55,7 +55,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          certificate: ${{ secrets.SSH_CERTIFICATE }}
+          key: ${{ secrets.SSH_CERTIFICATE }}
           port: ${{ secrets.SSH_PORT }}
           source: ./
           target: "~/deploy/helmfile/releases/${{ env.RELEASE_TS }}"
@@ -66,7 +66,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          certificate: ${{ secrets.SSH_CERTIFICATE }}
+          key: ${{ secrets.SSH_CERTIFICATE }}
           port: ${{ secrets.SSH_PORT }}
           script: |
             set -ex
