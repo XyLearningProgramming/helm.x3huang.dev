@@ -1,18 +1,18 @@
 name: CD Helmfile
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
+
 jobs:
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
 
     # require manual approval in GitHub → Settings → Environments → production
-    environment:
-      name: prod
-      # you can add URL, reviewers, etc. in the UI
+    environment: prod
 
     steps:
       - name: Manual approval
