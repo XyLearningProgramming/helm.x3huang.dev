@@ -25,6 +25,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: helmfile-manifests
+          path: ./
+      - run: |
+          cd ./helmfile-manifests
           # artifacts come from the triggering workflow_run
           # run-id: ${{ github.event.workflow_run.id }}
       

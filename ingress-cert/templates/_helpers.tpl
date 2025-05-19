@@ -60,3 +60,18 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Expand the name of the dashboard service for traefik.
+*/}}
+{{- define "ingress-cert.dashboardServiceName" -}}
+{{- printf "%s-dashboard" (default "traefik" .Values.dashboard.name) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Expand the selector for the dashboard service for traefik.
+*/}}
+{{- define "ingress-cert.dashboardServiceSelector" -}}
+app.kubernetes.io/name: {{ .Values.dashboard.name }}
+app.kubernetes.io/instance: {{- printf "%s-kube-system" (default "traefik" .Values.dashboard.name) | trunc 63 | trimSuffix "-" }}
+{{- end }}
