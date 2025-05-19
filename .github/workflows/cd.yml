@@ -2,89 +2,53 @@ name: CD Helmfile
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [CI Helmfile]
+    types:
+      - completed
 
 jobs:
-  deploy:
-    name: Deploy to VPS
+  on-failure:
     runs-on: ubuntu-latest
-
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - run: echo 'The triggering workflow failed, deployment skipped.' && exit 1
+  deploy:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     # require manual approval in GitHub → Settings → Environments → production
     environment: prod
-
     steps:
-      - name: Manual approval
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: ${{ github.actor }} # myself
-          minimum-approvals: 1
-          exclude-workflow-initiator-as-approver: false
-          fail-on-denial: true
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # - name: Download rendered manifests from CI
-      #   uses: actions/download-artifact@v4
+      # - name: Manual approval
+      #   uses: trstringer/manual-approval@v1
       #   with:
-      #     name: helmfile-manifests
-      #     # artifacts come from the triggering workflow_run
-      #     # run-id: ${{ github.event.workflow_run.id }}
+      #     secret: ${{ github.TOKEN }}
+      #     approvers: ${{ github.actor }} # myself
+      #     minimum-approvals: 1
+      #     exclude-workflow-initiator-as-approver: false
+      #     fail-on-denial: true
+      - uses: actions/checkout@v4
+      
+      - uses: ./.github/actions/helmfile-init
 
-      # (A) generate a release timestamp
-      - name: Set release timestamp
-        run: echo "RELEASE_TS=$(date +'%Y%m%dT%H%M%SZ')" >> $GITHUB_ENV
-
-      # (B) ensure target path exists on VPS
-      - name: Ensure release directory exists
-        uses: appleboy/ssh-action@v1.2.2
+      - name: Configure KUBECONFIG
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.VPS_KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+        env:
+          KUBECONFIG: $HOME/.kube/config
+      
+      - name: Dry‑run (Diff) before Apply
+        uses: helmfile/helmfile-action@v2.0.4
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          certificate: ${{ secrets.SSH_CERTIFICATE }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            mkdir -p ~/deploy/helmfile/releases/${{ env.RELEASE_TS }}
+          helmfile-args: diff --environment prod --detailed-exitcode
+        continue-on-error: true
+        # This acts as a dry‑run check :contentReference[oaicite:9]{index=9}
 
-      # (C) copy *everything* into that new release folder
-      - name: Transfer full repo to VPS under release dir
-        uses: appleboy/scp-action@v0.1.4
+      - name: Apply Changes
+        uses: helmfile/helmfile-action@v2.0.4
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          certificate: ${{ secrets.SSH_CERTIFICATE }}
-          port: ${{ secrets.SSH_PORT }}
-          source: ./
-          target: "~/deploy/helmfile/releases/${{ env.RELEASE_TS }}"
-
-      # (C) SSH in, rotate current → releases, symlink new, and helmfile diff/apply
-      - name: SSH & deploy with Helmfile
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          certificate: ${{ secrets.SSH_CERTIFICATE }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            set -ex
-
-            DEPLOY_BASE=~/deploy/helmfile
-            RELEASES=$DEPLOY_BASE/releases
-            CURRENT=$DEPLOY_BASE/current
-            TS=${RELEASE_TS}
-
-            # rotate out the old "current"
-            if [ -L "$CURRENT" ] || [ -d "$CURRENT" ]; then
-              mv "$CURRENT" "$RELEASES/$TS-prev"
-            fi
-
-            # point "current" at the new release
-            ln -sfn "$RELEASES/$TS" "$CURRENT"
-            cd "$CURRENT"
-
-            # show planned changes, then deploy
-            helmfile -e prod diff || true
-            helmfile -e prod apply
+          helmfile-args: apply --environment prod
+        # performs actual sync if diff detected :contentReference[oaicite:10]{index=10}

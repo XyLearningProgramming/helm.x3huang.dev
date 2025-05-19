@@ -3,13 +3,13 @@ kind: Ingress
 metadata:
   name: {{ .Release.Name }}-ingress
   namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "ingress-cert.labels" . | nindent 4 }}
   annotations:
     kubernetes.io/ingress.class: {{ .Values.ingressClass | default "traefik" }}
-    cert-manager.io/cluster-issuer: "{{ .Values.clusterIssuer.name }}"
+    cert-manager.io/cluster-issuer: {{ .Values.clusterIssuer.name }}
 spec:
   ingressClassName: {{ .Values.ingressClass | default "traefik" }}
-  resources:
-    {{- toYaml .Values.resources | nindent 4 }}  
   tls:
     - hosts:
         - {{ .Values.DOMAIN }}
@@ -22,6 +22,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ required "dummy-page.fullname template not found" (include "dummy-page.fullname" .) }}
+                name: {{ .Values.dummyPage.service.name }}
                 port:
-                  number: {{ include "dummy-page.service.port" . | default 80 }}
+                  number: {{ .Values.dummyPage.service.port }}

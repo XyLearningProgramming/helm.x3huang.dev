@@ -24,7 +24,7 @@ releases:
     namespace: cert-manager
     chart: jetstack/cert-manager
     version: v1.11.0
-    installed: {{ ne .Environment.Name "prod" }}
+    installed: true
     values:
       - values/{{ .Environment.Name }}.yaml
       - namespace: cert-manager
@@ -50,11 +50,9 @@ releases:
   - name: ingress
     namespace: default
     chart: ./ingress-cert
-    # needs:
-    #   - cert-manager/cert-manager
+    needs:
+      - cert-manager/cert-manager
+      - default/dummy-page
     values:
       - values/{{ .Environment.Name }}.yaml
       - namespace: default
-    dependencies:
-      - chart: ./dummy-page
-        version: 0.1.0

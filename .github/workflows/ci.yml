@@ -7,62 +7,13 @@ on:
     branches: [main]
 
 jobs:
-  lint-dry-run:
-    name: Lint, Diff, Render, Dry‑Run, Upload
+  ci:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      
+      - uses: ./.github/actions/helmfile-init
 
-      - name: Cache Helm plugins
-        uses: actions/cache@v3
+      - uses: helmfile/helmfile-action@v2.0.4
         with:
-          path: ~/.local/share/helm/plugins
-          key: ${{ runner.os }}-helm-plugins-${{ hashFiles('**/helmfile.yaml') }}
-
-      - name: Setup Helm & Helmfile + Plugins
-        uses: helmfile/helmfile-action@v2.0.4
-        with:
-          helmfile-version: 'v1.0.0'
-          helm-version: 'v3.17.3'
-          helm-plugins: >
-            https://github.com/databus23/helm-diff,
-            https://github.com/jkroepke/helm-secrets,
-            https://github.com/hypnoglow/helm-s3.git,
-            https://github.com/aslafy-z/helm-git
-          helmfile-args: init
-
-      - name: Lint all charts
-        run: |
-          helmfile lint
-
-      # - name: Show planned changes (diff)
-      #   run: |
-      #     helmfile -e prod diff
-      #   continue-on-error: true
-
-      - name: Render full manifests
-        run: |
-          mkdir -p rendered
-          helmfile template --skip-deps -e prod --output-dir rendered
-
-      # Disabled for now, too slow for a simple check.
-      #
-      # - name: Dry‑run apply rendered YAML
-      # - uses: engineerd/setup-kind@v1.0.0     # or whichever version
-      #   with:
-      #     version: v0.24.0
-      # - name: Create cluster
-      #   run: kind create cluster
-      # - name: Lint with server-side dry-run
-      #   run: |
-      #     kubectl apply --dry-run=server --recursive -f rendered/
-
-      # - name: Upload rendered manifests only on main
-      #   if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: helmfile-manifests
-      #     path: ./
-      #     if-no-files-found: error
+          helmfile-args: lint
