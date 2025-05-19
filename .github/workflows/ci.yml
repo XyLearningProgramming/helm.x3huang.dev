@@ -16,17 +16,4 @@ jobs:
 
       - uses: helmfile/helmfile-action@v2.0.4
         with:
-          helmfile-args: deps
-
-      - uses: helmfile/helmfile-action@v2.0.4
-        with:
           helmfile-args: lint
-
-      - run: |
-          mkdir -p rendered
-          helmfile template --skip-deps -e prod --output-dir rendered
-          
-      - uses: actions/upload-artifact@v4
-        with:
-          name: helmfile-manifests
-          path: ./

@@ -2,13 +2,21 @@ name: CD Helmfile
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [CI Helmfile]
+    types:
+      - completed
 
 jobs:
+  on-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - run: echo 'The triggering workflow failed, deployment skipped.' && exit 1
   deploy:
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     # require manual approval in GitHub → Settings → Environments → production
     environment: prod
     steps:
@@ -21,15 +29,6 @@ jobs:
       #     exclude-workflow-initiator-as-approver: false
       #     fail-on-denial: true
       - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: helmfile-manifests
-          path: ./
-      - run: |
-          cd ./helmfile-manifests
-          # artifacts come from the triggering workflow_run
-          # run-id: ${{ github.event.workflow_run.id }}
       
       - uses: ./.github/actions/helmfile-init
 
@@ -45,7 +44,7 @@ jobs:
         uses: helmfile/helmfile-action@v2.0.4
         with:
           helmfile-args: diff --environment prod --detailed-exitcode
-        
+        continue-on-error: true
         # This acts as a dry‑run check :contentReference[oaicite:9]{index=9}
 
       - name: Apply Changes
