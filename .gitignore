@@ -130,3 +130,7 @@ temp/
 
 # Output file for rendered
 rendered/
+
+# Secrets files
+secrets/*
+!secrets/*.example.env

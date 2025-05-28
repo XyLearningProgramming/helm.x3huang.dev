@@ -17,6 +17,8 @@ environments:
 repositories:
   - name: jetstack
     url: https://charts.jetstack.io
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
 ---
 # Cert-Manager Chart
 releases:
@@ -28,6 +30,10 @@ releases:
     values:
       - values/{{ .Environment.Name }}.yaml
       - namespace: cert-manager
+      - resources:
+          limits:
+            cpu: "200m"  # (0.2 vCPU)
+            memory: "256Mi"  # (256 MiB)
     set:
       # one time install crd first
       # kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
@@ -56,3 +62,21 @@ releases:
     values:
       - values/{{ .Environment.Name }}.yaml
       - namespace: default
+
+# Kube system: traefik metrics 
+  - name: kube-system
+    namespace: kube-system
+    chart: ./kube-system
+    values:
+      - values/{{ .Environment.Name }}.yaml
+
+# Prometheus stack
+  - name: kube-prom-stack
+    namespace: monitoring
+    chart: prometheus-community/kube-prometheus-stack
+    needs:
+      - kube-system/kube-system
+    version: "72.5.0"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
+    values:
+      - values/{{ .Environment.Name }}.yaml
+      - prom-stack/values.yaml.gotmpl

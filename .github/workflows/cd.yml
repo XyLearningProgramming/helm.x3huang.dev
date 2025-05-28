@@ -39,6 +39,13 @@ jobs:
           chmod 600 $HOME/.kube/config
         env:
           KUBECONFIG: $HOME/.kube/config
+
+      - name: Write secrets monitoring
+        run: echo "${{ secrets.SECRETS_MONITORING }}" > ./secrets/monitoring.env
+
+      - name: Apply secrets
+        run: |
+          ./scripts/apply-secrets.sh
       
       - name: Dry‑run (Diff) before Apply
         uses: helmfile/helmfile-action@v2.0.4

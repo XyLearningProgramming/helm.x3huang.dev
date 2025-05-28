@@ -1,0 +1,72 @@
+grafana:
+  enabled: false
+
+alertmanager:
+  enabled: false
+
+defaultRules:
+  create: false
+
+kubeEtcd:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeApiServer:
+  enabled: false
+
+kubelet:
+  enabled: true
+
+prometheus:
+  prometheusSpec:
+    resources:
+      limits:
+        memory: "4Gi"
+        cpu: "1"
+    remoteWrite:
+      - url: https://prometheus-prod-37-prod-ap-southeast-1.grafana.net/api/prom/push
+        remoteTimeout: 2m
+        basicAuth:
+          username:
+            name: helmfile-secret
+            key: GRAFANA_CLOUD_USERNAME
+          password:
+            name: helmfile-secret
+            key: GRAFANA_CLOUD_API_KEY
+        scrapeInterval: 1m
+        queueConfig:
+          batchSendDeadline: 2m
+          maxSamplesPerSend: 200      # Lower this to reduce burst size
+          capacity: 1000
+          maxShards: 2
+        writeRelabelConfigs:
+          - targetLabel: domain
+            replacement: {{ .Values | get "DOMAIN" }}
+            action: replace
+        # writeRelabelConfigs:
+        #   # drop every metric whose name is NOT one of the ones used on the dashboard 19972
+        #   - sourceLabels: [job, __name__]
+        #     regex: >
+        #       kubelet;
+        #       (?!container_memory_working_set_bytes
+        #       |machine_memory_bytes
+        #       |container_memory_usage_bytes
+        #       |container_cpu_usage_seconds_total
+        #       |machine_cpu_cores
+        #       |machine_cpu_physical_cores
+        #       |container_fs_usage_bytes
+        #       |container_fs_limit_bytes
+        #       |container_network_receive_bytes_total
+        #       |container_network_transmit_bytes_total
+        #       ).*
+        #     action: drop
+    additionalScrapeConfigs: |
+      - job_name: traefik
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["traefik-metrics-service.kube-system.svc:9100"]

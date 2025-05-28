@@ -24,5 +24,7 @@ Server Version: v1.32.4+k3s1
 
 ## Comments
 
-1. Need to install CRDs manually if not installed at least once before.
+1. Need to install some CRDs manually if not installed at least once before.
 2. Change `./values` if domain name changes.
+3. Add files in `./secrets` as secrets in workflow.
+4. Run `sudo mount --make-shared /` so that prom. node exporter container can start successfully.
