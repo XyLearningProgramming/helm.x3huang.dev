@@ -25,9 +25,12 @@ kubelet:
 prometheus:
   prometheusSpec:
     resources:
+      requests: # Good practice
+        memory: "256Mi"
+        cpu: "200m" # 0.2 CPU
       limits:
-        memory: "4Gi"
-        cpu: "1"
+        memory: "512Mi"  # Start with 0.5Gi, monitor and adjust
+        cpu: "500m"       # Start with 0.5 CPU, monitor and adjust
     remoteWrite:
       - url: https://prometheus-prod-37-prod-ap-southeast-1.grafana.net/api/prom/push
         remoteTimeout: 2m
@@ -48,23 +51,17 @@ prometheus:
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}
             action: replace
-        # writeRelabelConfigs:
-        #   # drop every metric whose name is NOT one of the ones used on the dashboard 19972
-        #   - sourceLabels: [job, __name__]
-        #     regex: >
-        #       kubelet;
-        #       (?!container_memory_working_set_bytes
-        #       |machine_memory_bytes
-        #       |container_memory_usage_bytes
-        #       |container_cpu_usage_seconds_total
-        #       |machine_cpu_cores
-        #       |machine_cpu_physical_cores
-        #       |container_fs_usage_bytes
-        #       |container_fs_limit_bytes
-        #       |container_network_receive_bytes_total
-        #       |container_network_transmit_bytes_total
-        #       ).*
-        #     action: drop
+          # 1) KEEP only the selected metrics from kubelet
+          - source_labels: [job, __name__]
+            regex: '^(?:kubelet);(?:container_memory_working_set_bytes|machine_memory_bytes|container_memory_usage_bytes|container_cpu_usage_seconds_total|machine_cpu_cores|machine_cpu_physical_cores|container_fs_usage_bytes|container_fs_limit_bytes|container_network_receive_bytes_total|container_network_transmit_bytes_total)$'
+            action: keep
+
+          # 2) DROP any remaining kubelet metrics
+          - source_labels: [job]
+            regex: '^kubelet$'
+            action: drop
+
+          # 3) (Implicit) Everything else is left untouched/accepted
     additionalScrapeConfigs: |
       - job_name: traefik
         metrics_path: /metrics
