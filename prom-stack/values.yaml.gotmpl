@@ -25,6 +25,8 @@ kubelet:
 prometheus:
   prometheusSpec:
     scrapeInterval: 1m    # Global scrape interval
+    maximumStartupDurationSeconds: 600  # Add this to fix the startup duration error
+    # Prevent default limits from being added
     sampleLimit: 50000           # Maximum number of samples per scrape
     targetLimit: 1000           # Maximum number of targets to scrape
     labelLimit: 1000           # Maximum number of labels per series
@@ -57,16 +59,13 @@ prometheus:
             replacement: {{ .Values | get "DOMAIN" }}
             action: replace
           # 1) KEEP only the selected metrics from kubelet
-          - source_labels: [job, __name__]
+          - sourceLabels: [job, __name__]  # Fix: source_labels -> sourceLabels
             regex: '^(?:kubelet);(?:container_memory_working_set_bytes|machine_memory_bytes|container_memory_usage_bytes|container_cpu_usage_seconds_total|machine_cpu_cores|machine_cpu_physical_cores|container_fs_usage_bytes|container_fs_limit_bytes|container_network_receive_bytes_total|container_network_transmit_bytes_total)$'
             action: keep
-
           # 2) DROP any remaining kubelet metrics
-          - source_labels: [job]
+          - sourceLabels: [job]  # Fix: source_labels -> sourceLabels
             regex: '^kubelet$'
             action: drop
-
-          # 3) (Implicit) Everything else is left untouched/accepted
     additionalScrapeConfigs: |
       - job_name: traefik
         metrics_path: /metrics
