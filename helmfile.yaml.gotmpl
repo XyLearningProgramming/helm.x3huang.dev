@@ -91,3 +91,6 @@ releases:
     values:
       - values/{{ .Environment.Name }}.yaml
       - prom-stack/values.yaml.gotmpl
+    set:
+      - name: installCRDs
+        value: false
