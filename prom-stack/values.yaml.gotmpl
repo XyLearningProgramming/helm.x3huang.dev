@@ -25,6 +25,11 @@ kubelet:
 prometheus:
   prometheusSpec:
     scrapeInterval: 1m    # Global scrape interval
+    sampleLimit: 50000           # Maximum number of samples per scrape
+    targetLimit: 1000           # Maximum number of targets to scrape
+    labelLimit: 1000           # Maximum number of labels per series
+    labelNameLengthLimit: 1024  # Maximum length of label names
+    labelValueLengthLimit: 2048 # Maximum length of label values
     resources:
       requests: # Good practice
         memory: "256Mi"
