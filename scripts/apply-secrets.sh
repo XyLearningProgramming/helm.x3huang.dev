@@ -13,6 +13,7 @@ for file in ./secrets/*.env; do
   fi
   ns="${file##*/}"         # Strip path
   ns="${ns%.env}"          # Remove .env extension to get namespace
+  kubectl create namespace "$ns" || true
   kubectl create secret generic helmfile-secret \
     --namespace "$ns" \
     --dry-run=client \
