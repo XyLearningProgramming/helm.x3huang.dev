@@ -24,6 +24,7 @@ kubelet:
 
 prometheus:
   prometheusSpec:
+    scrapeInterval: 1m    # Global scrape interval
     resources:
       requests: # Good practice
         memory: "256Mi"
@@ -41,7 +42,6 @@ prometheus:
           password:
             name: helmfile-secret
             key: GRAFANA_CLOUD_API_KEY
-        scrapeInterval: 1m
         queueConfig:
           batchSendDeadline: 2m
           maxSamplesPerSend: 100      # Lower this to reduce burst size
