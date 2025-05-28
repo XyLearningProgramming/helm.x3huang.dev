@@ -41,9 +41,9 @@ prometheus:
         scrapeInterval: 1m
         queueConfig:
           batchSendDeadline: 2m
-          maxSamplesPerSend: 200      # Lower this to reduce burst size
-          capacity: 1000
-          maxShards: 2
+          maxSamplesPerSend: 100      # Lower this to reduce burst size
+          capacity: 2000
+          maxShards: 5
         writeRelabelConfigs:
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}

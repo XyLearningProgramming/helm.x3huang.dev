@@ -1,6 +1,6 @@
 # helmfile.yaml
 helmDefaults:
-  timeout: 600
+  timeout: 3600
   wait: true
   atomic: true
 
@@ -77,6 +77,17 @@ releases:
     needs:
       - kube-system/kube-system
     version: "72.5.0"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
+    # install crds
+    # 
+    # ref: https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack/10.0.1
+    # 
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.42/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
     values:
       - values/{{ .Environment.Name }}.yaml
       - prom-stack/values.yaml.gotmpl
