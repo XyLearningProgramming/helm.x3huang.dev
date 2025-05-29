@@ -24,6 +24,18 @@ kubelet:
 
 prometheus:
   prometheusSpec:
+    # logLevel: {{ if eq .Environment.Name "prod" }}info{{ else }}debug{{ end }}
+    logLevel: debug # More log to tweak remote pressure
+    scrapeInterval: 1m    # Global scrape interval
+    maximumStartupDurationSeconds: 600  # Add this to fix the startup duration error
+    retention: 3d         # Keep data for 5 days
+    retentionSize: 8GB    # Maximum disk space to use
+    # Prevent default limits from being added
+    sampleLimit: 50000           # Maximum number of samples per scrape
+    targetLimit: 1000           # Maximum number of targets to scrape
+    labelLimit: 1000           # Maximum number of labels per series
+    labelNameLengthLimit: 1024  # Maximum length of label names
+    labelValueLengthLimit: 2048 # Maximum length of label values
     resources:
       requests: # Good practice
         memory: "256Mi"
@@ -33,7 +45,7 @@ prometheus:
         cpu: "500m"       # Start with 0.5 CPU, monitor and adjust
     remoteWrite:
       - url: https://prometheus-prod-37-prod-ap-southeast-1.grafana.net/api/prom/push
-        remoteTimeout: 2m
+        remoteTimeout: 3m
         basicAuth:
           username:
             name: helmfile-secret
@@ -41,27 +53,25 @@ prometheus:
           password:
             name: helmfile-secret
             key: GRAFANA_CLOUD_API_KEY
-        scrapeInterval: 1m
         queueConfig:
-          batchSendDeadline: 2m
-          maxSamplesPerSend: 100      # Lower this to reduce burst size
-          capacity: 2000
-          maxShards: 5
+          batchSendDeadline: 5m          # Increased from 3m to allow more time for batches
+          maxSamplesPerSend: 200         # Increased from 100 to reduce number of API calls
+          capacity: 5000                 # Increased from 5000 to handle more samples
+          maxShards: 10                   # Increased from 3 to handle higher throughput
+          minShards: 1                    # Increased from 1 to ensure minimum throughput
+          retryOnRateLimit: false
         writeRelabelConfigs:
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}
             action: replace
-          # 1) KEEP only the selected metrics from kubelet
-          - source_labels: [job, __name__]
-            regex: '^(?:kubelet);(?:container_memory_working_set_bytes|machine_memory_bytes|container_memory_usage_bytes|container_cpu_usage_seconds_total|machine_cpu_cores|machine_cpu_physical_cores|container_fs_usage_bytes|container_fs_limit_bytes|container_network_receive_bytes_total|container_network_transmit_bytes_total)$'
-            action: keep
-
-          # 2) DROP any remaining kubelet metrics
-          - source_labels: [job]
-            regex: '^kubelet$'
-            action: drop
-
-          # 3) (Implicit) Everything else is left untouched/accepted
+          # # 1) KEEP only the selected metrics from kubelet
+          # - sourceLabels: [job, __name__]  # Fix: source_labels -> sourceLabels
+          #   regex: '^(?:kubelet);(?:container_memory_working_set_bytes|machine_memory_bytes|container_memory_usage_bytes|container_cpu_usage_seconds_total|machine_cpu_cores|machine_cpu_physical_cores|container_fs_usage_bytes|container_fs_limit_bytes|container_network_receive_bytes_total|container_network_transmit_bytes_total)$'
+          #   action: keep
+          # # 2) DROP any remaining kubelet metrics
+          # - sourceLabels: [job]  # Fix: source_labels -> sourceLabels
+          #   regex: '^kubelet$'
+          #   action: drop
     additionalScrapeConfigs: |
       - job_name: traefik
         metrics_path: /metrics
