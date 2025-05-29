@@ -52,12 +52,12 @@ prometheus:
             name: helmfile-secret
             key: GRAFANA_CLOUD_API_KEY
         queueConfig:
-          retryOnRateLimit: false
           batchSendDeadline: 3m
           maxSamplesPerSend: 100      # Lower this to reduce burst size
           capacity: 5000
-          maxShards: 10
-          minShards: 2
+          maxShards: 3
+          minShards: 1
+          retryOnRateLimit: true
         writeRelabelConfigs:
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}
