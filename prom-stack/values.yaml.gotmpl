@@ -43,7 +43,7 @@ prometheus:
         cpu: "500m"       # Start with 0.5 CPU, monitor and adjust
     remoteWrite:
       - url: https://prometheus-prod-37-prod-ap-southeast-1.grafana.net/api/prom/push
-        remoteTimeout: 2m
+        remoteTimeout: 30s
         basicAuth:
           username:
             name: helmfile-secret
@@ -52,10 +52,12 @@ prometheus:
             name: helmfile-secret
             key: GRAFANA_CLOUD_API_KEY
         queueConfig:
-          batchSendDeadline: 2m
+          retryOnRateLimit: false
+          batchSendDeadline: 30s
           maxSamplesPerSend: 100      # Lower this to reduce burst size
-          capacity: 2000
+          capacity: 10000
           maxShards: 5
+          minShards: 2
         writeRelabelConfigs:
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}
