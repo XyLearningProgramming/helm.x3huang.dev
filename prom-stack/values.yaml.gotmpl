@@ -1,5 +1,36 @@
 grafana:
-  enabled: false
+  enabled: true
+  admin:
+    existingSecret: helmfile-secret
+    userKey: GRAFANA_ADMIN_USER
+    passwordKey: GRAFANA_ADMIN_PASSWORD
+  env:
+    GF_SERVER_ROOT_URL: https://{{ .Values | get "DOMAIN" }}/grafana
+    GF_SERVER_SERVE_FROM_SUB_PATH: true
+  ingress:
+    enabled: true
+    # TODO: inject these cert values in env
+    ingressClassName: "traefik"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    path: /grafana
+    pathType: Prefix
+    hosts:
+      - {{ .Values | get "DOMAIN" }}
+    tls:
+      - hosts:
+          - {{ .Values | get "DOMAIN" }}
+        secretName: {{ .Values | get "DOMAIN" }}-tls
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus-operated:9090
+          isDefault: true
+          editable: true
 
 alertmanager:
   enabled: false
