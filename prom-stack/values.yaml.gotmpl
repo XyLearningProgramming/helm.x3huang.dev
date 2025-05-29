@@ -64,14 +64,14 @@ prometheus:
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}
             action: replace
-          # 1) KEEP only the selected metrics from kubelet
-          - sourceLabels: [job, __name__]  # Fix: source_labels -> sourceLabels
-            regex: '^(?:kubelet);(?:container_memory_working_set_bytes|machine_memory_bytes|container_memory_usage_bytes|container_cpu_usage_seconds_total|machine_cpu_cores|machine_cpu_physical_cores|container_fs_usage_bytes|container_fs_limit_bytes|container_network_receive_bytes_total|container_network_transmit_bytes_total)$'
-            action: keep
-          # 2) DROP any remaining kubelet metrics
-          - sourceLabels: [job]  # Fix: source_labels -> sourceLabels
-            regex: '^kubelet$'
-            action: drop
+          # # 1) KEEP only the selected metrics from kubelet
+          # - sourceLabels: [job, __name__]  # Fix: source_labels -> sourceLabels
+          #   regex: '^(?:kubelet);(?:container_memory_working_set_bytes|machine_memory_bytes|container_memory_usage_bytes|container_cpu_usage_seconds_total|machine_cpu_cores|machine_cpu_physical_cores|container_fs_usage_bytes|container_fs_limit_bytes|container_network_receive_bytes_total|container_network_transmit_bytes_total)$'
+          #   action: keep
+          # # 2) DROP any remaining kubelet metrics
+          # - sourceLabels: [job]  # Fix: source_labels -> sourceLabels
+          #   regex: '^kubelet$'
+          #   action: drop
     additionalScrapeConfigs: |
       - job_name: traefik
         metrics_path: /metrics
