@@ -1,14 +1,20 @@
 # helm.x3huang.dev
 
 This repository manages all `helm` charts for my personal site for blogging [x3huang.dev](https://x3huang.dev) using `helmfile`.  
-Deployments are automated via CI/CD pipelines that deploy to a VPS over HTTP.
+Deployments are automated via CI/CD pipelines that deploy to a VPS over HTTP so that **ALL** infra of the site can be reproduced anywhere, anytime, explicitly.
 
 ## Features
 
 - **Declarative Management**: Use `helmfile` to declare, manage, and deploy multiple Helm charts.
 - **Automated CI/CD**: Integration with GitHub Actions for continuous delivery.
-- **Streamlined Workflow**: `helmfile` commands for rendering and applying configurations.
-- **Env Values and Secrets Management**: Use values differ by environment in `./values` and injected by helmfile.
+- **Env Values and Secrets Management**: Use values differ by environment in `./values` and injected by helmfile. Secrets are injected by workflow.
+
+## Components (Helm Charts)
+
+- TLS cert
+- Monitoring stack
+- Examplary page(s) with ingress
+- [TODO] SMTP
 
 ## Prerequisites
 
