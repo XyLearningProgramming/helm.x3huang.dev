@@ -26,6 +26,8 @@ prometheus:
   prometheusSpec:
     scrapeInterval: 1m    # Global scrape interval
     maximumStartupDurationSeconds: 600  # Add this to fix the startup duration error
+    retention: 3d         # Keep data for 5 days
+    retentionSize: 8GB    # Maximum disk space to use
     # Prevent default limits from being added
     sampleLimit: 50000           # Maximum number of samples per scrape
     targetLimit: 1000           # Maximum number of targets to scrape
