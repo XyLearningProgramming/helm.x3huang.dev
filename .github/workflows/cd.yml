@@ -45,6 +45,9 @@ jobs:
       - name: Write secrets monitoring
         run: echo "${{ secrets.SECRETS_MONITORING }}" > ./secrets/monitoring.env
 
+      - name: Write secrets mail
+        run: echo "${{ secrets.SECRETS_MAIL }}" > ./secrets/mail.env
+
       - name: Apply secrets
         run: |
           ./scripts/apply-secrets.sh

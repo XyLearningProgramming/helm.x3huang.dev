@@ -19,6 +19,8 @@ repositories:
     url: https://charts.jetstack.io
   - name: prometheus-community
     url: https://prometheus-community.github.io/helm-charts
+  - name: docker-mailserver
+    url: https://docker-mailserver.github.io/docker-mailserver-helm/
 ---
 # Cert-Manager Chart
 releases:
@@ -96,3 +98,92 @@ releases:
     set:
       - name: installCRDs
         value: false
+
+  # Mail Server
+  - name: mailserver
+    namespace: mail
+    chart: docker-mailserver/docker-mailserver
+    version: 1.2.0
+    needs:
+      - cert-manager/cert-manager
+    values:
+      - values/{{ .Environment.Name }}.yaml
+      - namespace: mail
+      # Mail server configuration
+      - docker-mailserver:
+          # TLS and domain settings
+          deployment:
+            env:
+              OVERRIDE_HOSTNAME: mail.{{ .Values.DOMAIN }}
+              POSTMASTER_ADDRESS: postmaster@{{ .Values.DOMAIN }}
+              SSL_TYPE: manual
+              # Security settings
+              ENABLE_CLAMAV: 1
+              ENABLE_SPAMASSASSIN: 1
+              SPAMASSASSIN_SPAM_TO_INBOX: 0
+              ENABLE_FAIL2BAN: 1
+              ENABLE_POSTGREY: 1
+              # Secure defaults - Anti-relay protection
+              PERMIT_DOCKER: none
+              POSTSCREEN_ACTION: enforce
+              # Only accept mail for our domain
+              POSTFIX_MYDESTINATION: ""  # Don't accept mail for bare hostname
+              POSTFIX_DESTINATION_CONCURRENCY_LIMIT: 1  # Limit concurrent deliveries
+              POSTFIX_DESTINATION_RATE_DELAY: 1s  # Add delay between deliveries
+              POSTFIX_SMTPD_RECIPIENT_RESTRICTIONS: "permit_sasl_authenticated,permit_mynetworks,reject_unauth_destination,reject"
+              ENABLE_POP3: 0
+              POSTFIX_MESSAGE_SIZE_LIMIT: 25600000  # Limit messages to 25MB
+              # POSTFIX_INET_PROTOCOLS: ipv4  # Disable IPv6 if not needed
+              # Authentication required for sending
+              SMTP_ONLY: 0
+              ENABLE_SASLAUTHD: 0  # Use Dovecot authentication
+              POSTFIX_REJECT_UNKNOWN_CLIENT_HOSTNAME: 1  # Reject clients without proper DNS
+              PERMIT_EMPTY_SENDER_DOMAIN: 0  # Reject emails with empty sender domain
+              # Anti-spam measures
+              ENABLE_POSTFIX_VIRTUAL_TRANSPORT: 1  # Required for proper mail routing
+              SPAMASSASSIN_KILL_SCORE: 15  # Auto-reject very spammy messages
+              # DKIM signing
+              ENABLE_OPENDKIM: 1
+              ENABLE_OPENDMARC: 1
+              ENABLE_POLICYD_SPF: 1
+          
+          # Resources
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "256Mi"
+          
+          # Use existing secret for mail config
+          existingSecret: helmfile-secret
+          
+          # Certificate settings
+          certificate:
+            enabled: true
+            issuerRef:
+              name: letsencrypt-prod
+              kind: ClusterIssuer
+            hosts:
+              - mail.{{ .Values.DOMAIN }}
+              # - imap.{{ .Values.DOMAIN }}
+              # - smtp.{{ .Values.DOMAIN }}
+          
+          # Persistence settings
+          persistence:
+            mail-data:
+              enabled: true
+              size: 10Gi
+            mail-state:
+              enabled: true
+              size: 1Gi
+
+          # Mount aliases file
+          configMaps:
+            aliases:
+              create: true
+              path: "aliases"
+              data: |
+                # Forward admin and postmaster to info
+                admin@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+                postmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+                abuse@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+                hostmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
