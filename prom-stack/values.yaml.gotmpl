@@ -64,10 +64,10 @@ prometheus:
         remoteTimeout: 3m
         basicAuth:
           username:
-            name: helmfile-secret
+            name: helmfile-secret-monitoring
             key: GRAFANA_CLOUD_USERNAME
           password:
-            name: helmfile-secret
+            name: helmfile-secret-monitoring
             key: GRAFANA_CLOUD_API_KEY
         queueConfig:
           batchSendDeadline: 5m          # Increased from 3m to allow more time for batches

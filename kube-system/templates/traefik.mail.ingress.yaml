@@ -1,0 +1,68 @@
+# mail-imaps-traefik.yaml
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "kube-system.fullname" . }}-imaps-ingress
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "kube-system.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    - {{ .Values.mail.entryPoint.name }}-imaps           # matches the static entryPoint :993 we created above
+  routes:
+    - match: HostSNI(`*`)  # match all TLS hosts (mail clients do a TLS handshake first)
+      services:
+        - name: {{ .Values.mail.service.name }}
+          port: 10993      # PROXY-port = 10000 + 993
+          sendProxy: true  # instructs Traefik to prepend the PROXY header
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "kube-system.fullname" . }}-smtp-ingress
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "kube-system.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    - {{ .Values.mail.entryPoint.name }}-smtp
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: {{ .Values.mail.service.name }}
+          port: 10025
+          sendProxy: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "kube-system.fullname" . }}-submission-ingress
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "kube-system.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    - {{ .Values.mail.entryPoint.name }}-submission
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: {{ .Values.mail.service.name }}
+          port: 10587
+          sendProxy: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "kube-system.fullname" . }}-pop3-ingress
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "kube-system.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    - {{ .Values.mail.entryPoint.name }}-pop3
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: {{ .Values.mail.service.name }}
+          port: 10995
+          sendProxy: true

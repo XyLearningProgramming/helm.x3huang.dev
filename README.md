@@ -40,3 +40,16 @@ Server Version: v1.32.4+k3s1
 2. Change `./values` if domain name changes.
 3. Add files in `./secrets` as secrets in workflow.
 4. Run `sudo mount --make-shared /` so that prom. node exporter container can start successfully.
+
+## Helpers
+
+```bash
+# Render mailserver to helm chart
+helm template mailserver \
+  --namespace mail \
+  --values values/default.yaml \
+  --values helmfile.yaml.gotmpl \
+  docker-mailserver/docker-mailserver \
+  --version 4.2.1 \
+  > ./rendered/mailserver.yaml
+```

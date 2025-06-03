@@ -1,0 +1,151 @@
+# -----------------------------------------
+# 1.1. PersistentVolume for mail-config
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mail-config-pv
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 1Mi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-mail-config
+  hostPath:
+    path: /tmp/docker-mailserver
+    type: DirectoryOrCreate
+---
+# -----------------------------------------
+# 1.2. PersistentVolumeClaim for mail-config
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mail-config-pvc
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-mail-config
+  resources:
+    requests:
+      storage: 1Mi
+---
+# -----------------------------------------
+# 2.1. PersistentVolume for mail-data
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mail-data-pv
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-mail-data
+  hostPath:
+    path: /var/mail
+    type: DirectoryOrCreate
+---
+# -----------------------------------------
+# 2.2. PersistentVolumeClaim for mail-data
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mail-data-pvc
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-mail-data
+  resources:
+    requests:
+      storage: 10Gi
+---
+# -----------------------------------------
+# 3.1. PersistentVolume for mail-state
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mail-state-pv
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-mail-state
+  hostPath:
+    path: /var/mail-state
+    type: DirectoryOrCreate
+---
+# -----------------------------------------
+# 3.2. PersistentVolumeClaim for mail-state
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mail-state-pvc
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-mail-state
+  resources:
+    requests:
+      storage: 1Gi
+---
+# -----------------------------------------
+# 4.1. PersistentVolume for mail-log
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mail-log-pv
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-mail-log
+  hostPath:
+    path: /var/log/mail
+    type: DirectoryOrCreate
+---
+# -----------------------------------------
+# 4.2. PersistentVolumeClaim for mail-log
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mail-log-pvc
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-mail-log
+  resources:
+    requests:
+      storage: 1Gi

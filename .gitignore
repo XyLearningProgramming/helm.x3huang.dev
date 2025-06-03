@@ -133,4 +133,4 @@ rendered/
 
 # Secrets files
 secrets/*
-!secrets/*.example.env
+!secrets/*.example.*
