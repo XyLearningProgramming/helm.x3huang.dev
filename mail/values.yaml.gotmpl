@@ -1,206 +1,214 @@
-docker-mailserver:
-  service:
-    type: ClusterIP
-    behind_proxy: true
-    proxy_trusted_networks: "10.42.0.0/16"
+# Name of the TLS secret created by cert-manager via ingress 
+# in ingress-cert/templates/ingress.yaml
+certificate: "mail-{{ .Values.DOMAIN }}-tls"
 
-  # TLS and domain settings
-  env:
-    - name: OVERRIDE_HOSTNAME
-      value: "mail.{{ .Values.DOMAIN }}"
-    - name: POSTMASTER_ADDRESS
-      value: "postmaster@{{ .Values.DOMAIN }}"
-    - name: SSL_TYPE
-      value: manual
-    # Security settings
-    - name: ENABLE_CLAMAV
-      value: "1"
-    - name: ENABLE_SPAMASSASSIN
-      value: "1"
-    - name: SPAMASSASSIN_SPAM_TO_INBOX
-      value: "0"
-    - name: ENABLE_FAIL2BAN
-      value: "1"
-    - name: ENABLE_POSTGREY
-      value: "1"
-    # Secure defaults - Anti-relay protection
-    - name: PERMIT_DOCKER
-      value: none
-    - name: POSTSCREEN_ACTION
-      value: enforce
-    # Only accept mail for our domain
-    - name: POSTFIX_MYDESTINATION
-      value: ""  # Don't accept mail for bare hostname
-    - name: POSTFIX_DESTINATION_CONCURRENCY_LIMIT
-      value: "1"  # Limit concurrent deliveries
-    - name: POSTFIX_DESTINATION_RATE_DELAY
-      value: 1s  # Add delay between deliveries
-    - name: POSTFIX_SMTPD_RECIPIENT_RESTRICTIONS
-      value: "permit_sasl_authenticated,permit_mynetworks,reject_unauth_destination,reject"
-    - name: ENABLE_POP3
-      value: "0"
-    - name: POSTFIX_MESSAGE_SIZE_LIMIT
-      value: "25600000"  # Limit messages to 25MB
-    # Authentication required for sending
-    - name: SMTP_ONLY
-      value: "0"
-    - name: ENABLE_SASLAUTHD
-      value: "0"  # Use Dovecot authentication
-    - name: POSTFIX_REJECT_UNKNOWN_CLIENT_HOSTNAME
-      value: "1"  # Reject clients without proper DNS
-    - name: PERMIT_EMPTY_SENDER_DOMAIN
-      value: "0"  # Reject emails with empty sender domain
-    # Anti-spam measures
-    - name: ENABLE_POSTFIX_VIRTUAL_TRANSPORT
-      value: "1"  # Required for proper mail routing
-    - name: SPAMASSASSIN_KILL_SCORE
-      value: "15"  # Auto-reject very spammy messages
-    # DKIM signing
-    - name: ENABLE_OPENDKIM
-      value: "1"
-    - name: ENABLE_OPENDMARC
-      value: "1"
-    - name: ENABLE_POLICYD_SPF
-      value: "1"
-    # Mail server secrets
-    - name: ADMIN_EMAIL
-      value: admin@x3huang.dev
-    - name: POSTMASTER_ADDRESS
-      value: postmaster@x3huang.dev
-    # DKIM selector for key generation
-    - name: DMS_DKIM_SELECTOR
-      value: mail
-
-  # Resources
-  resources:
-    limits:
-      cpu: "100m"
-      memory: "256Mi"
-
-  # Certificate settings
-  certificate:
-    enabled: true
-    issuerRef:
-      name: letsencrypt-prod
-      kind: ClusterIssuer
-    hosts:
-      - mail.{{ .Values.DOMAIN }}
-      # - imap.{{ .Values.DOMAIN }}
-      # - smtp.{{ .Values.DOMAIN }}
-
-  haproxy:
-    tcp:
-      25:   mail/mailserver-docker-mailserver:10025::PROXY-V1
-      587:  mail/mailserver-docker-mailserver:10587::PROXY-V1
-      993:  mail/mailserver-docker-mailserver:10993::PROXY-V1
-      995:  mail/mailserver-docker-mailserver:10995::PROXY-V1
-    service:
-      externalTrafficPolicy: Cluster   # Doesn’t preserve IP (Traefik will handle IP via PROX
-
-  # -------------------------
-  # Persistence: use existing PVCs
-  # -------------------------
-  persistence:
-    # We disable the built‐in 'hostPath' blocks here.
-    enabled: true
-    # Now, for each named volume, tell Helm which existingClaim to use:
-    mailConfig:
-      enabled: true
-      existingClaim: mail-config-pvc
-    mailData:
-      enabled: true
-      existingClaim: mail-data-pvc
-    mailState:
-      enabled: true
-      existingClaim: mail-state-pvc
-    mailLog:
-      enabled: true
-      existingClaim: mail-log-pvc
-
-  # -------------------------
-  # PodTemplate: mount PVCs + Secret + ConfigMap
-  # -------------------------
-  podTemplate:
-    extraVolumes:
-      # mount mail-config-pvc as /tmp/docker-mailserver
-      - name: mail-config
-        persistentVolumeClaim:
-          claimName: mail-config-pvc
-
-      # mount mail-data-pvc as /var/mail
-      - name: mail-data
-        persistentVolumeClaim:
-          claimName: mail-data-pvc
-
-      # mount mail-state-pvc as /var/mail-state
-      - name: mail-state
-        persistentVolumeClaim:
-          claimName: mail-state-pvc
-
-      # mount mail-log-pvc as /var/log/mail
-      - name: mail-log
-        persistentVolumeClaim:
-          claimName: mail-log-pvc
-
-      # project both the Secret (accounts file) and ConfigMap (aliases) into /config
-      - name: config-data
-        projected:
-          sources:
-            - secret:
-                name: helmfile-secret-mail
-                items:
-                  - key: mail.cf
-                    path: postfix-accounts.cf
-            - configMap:
-                name: mailserver-docker-mailserver-postfix-virtual
-                items:
-                  - key: postfix-virtual.cf
-                    path: postfix-virtual.cf
-
-  extraVolumeMounts:
-    - name: mail-config
-      mountPath: /tmp/docker-mailserver
-
-    - name: mail-data
-      mountPath: /var/mail
-
-    - name: mail-state
-      mountPath: /var/mail-state
-
-    - name: mail-log
-      mountPath: /var/log/mail
-
-    - name: config-data
-      mountPath: /config
-
-  # -------------------------
-  # Configure the virtual aliases via a ConfigMap (Helm will create it)
-  # -------------------------
-  configMaps:
-    postfix-virtual:
-      create: true
-      path: postfix-virtual.cf
-      data: |
-        # Any additional aliases you want—in addition to those in the Secret:
-        # Format: alias@domain target@domain
-        admin@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
-        postmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
-        abuse@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
-        hostmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
-
-  # Configure email aliases via configMap directly in the config file location
+deployment:
+  # replicas: 1
+  
+  # Initialize mail configuration using initContainer
   initContainers:
-    - name: setup-configs
+    - name: setup-mail-config
       image: busybox
-      command:
-        - /bin/sh
-        - -c
+      command: ["/bin/sh", "-c"]
+      args:
         - |
-          cp -v /config/* /tmp/docker-mailserver/ && \
-          chmod 0600 /tmp/docker-mailserver/postfix-accounts.cf && \
+          # Copy account configuration
+          cp /mail-secret/mail.cf postfix-accounts.cf
+          chmod 0600 postfix-accounts.cf
+          
+          # Create alias configuration
+          cat > postfix-virtual.cf << 'EOF'
+          # Mail aliases
+          admin@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+          postmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+          abuse@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+          hostmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+          EOF
           chmod 0600 /tmp/docker-mailserver/postfix-virtual.cf
       volumeMounts:
-        - name: config-data
-          mountPath: /config
         - name: mail-config
           mountPath: /tmp/docker-mailserver
+        - name: mail-secret
+          mountPath: /mail-secret
+          readOnly: true
+  
+  # Add the secret volume for mail accounts
+  extraVolumes:
+    - name: mail-secret
+      secret:
+        secretName: helmfile-secret-mail
+        items:
+          - key: mail.cf
+            path: mail.cf
+        defaultMode: 0600
+
+  env:
+    OVERRIDE_HOSTNAME: "mail.{{ .Values.DOMAIN }}"
+    POSTMASTER_ADDRESS: "postmaster@{{ .Values.DOMAIN }}"
+    LOG_LEVEL: "info"
+    ENABLE_UPDATE_CHECK: "1"
+    UPDATE_CHECK_INTERVAL: "1d"
+    PERMIT_DOCKER: "none"
+    ENABLE_IMAP: "1"
+    ENABLE_RSPAMD: "1"
+    ENABLE_RSPAMD_REDIS: "1"
+    RSPAMD_HFILTER: "1"
+    RSPAMD_HFILTER_HOSTNAME_UNKNOWN_SCORE: "6"
+    POSTSCREEN_ACTION: "enforce"
+    ENABLE_QUOTAS: "1"
+    LOGROTATE_COUNT: "4"
+    LOGROTATE_INTERVAL: "weekly"
+    POSTFIX_INET_PROTOCOLS: "all"
+    DOVECOT_INET_PROTOCOLS: "all"
+    SPAMASSASSIN_SPAM_TO_INBOX: "1"
+    MOVE_SPAM_TO_JUNK: "1"
+    SRS_SENDER_CLASSES: "envelope_sender"
+    RELAY_PORT: "25"
+    DOVECOT_MAILBOX_FORMAT: "maildir"
+    POSTGREY_DELAY: "300"
+    POSTGREY_MAX_AGE: "35"
+    POSTGREY_TEXT: "Delayed by Postgrey"
+
+  # securityContext:
+  #   runAsUser: 5000
+  #   runAsGroup: 5000
+
+  # containerSecurityContext:
+  #   readOnlyRootFilesystem: false
+  #   privileged: false
+
+  resources:
+    requests:
+      cpu: "50M"
+      memory: "64Mi"
+    limits:
+      cpu: "500M"
+      memory: "512Mi"
+
+#   tolerations: []
+#   initContainers: []
+#   extraVolumeMounts: []
+#   extraVolumes: []
+
+# service:
+#   type: "ClusterIP"
+#   port: 8080  # Web interface port
+#   loadBalancer:
+#     allowedIps:
+#       - "0.0.0.0/0"
+#   annotations: {}
+#   labels: {}
+
+persistent_volume_claims:
+  mail-config:
+    enabled: true
+    size: "1Mi"
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-mail-config"
+  mail-data:
+    enabled: true
+    size: "10Gi"
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-mail-data"
+  mail-state:
+    enabled: true
+    size: "1Gi"
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-mail-state"
+  mail-log:
+    enabled: true
+    size: "1Gi"
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-mail-log"
+
+# persistence:
+#   mail-config:
+#     volumeName: mail-config
+#     mountPath: /tmp/docker-mailserver
+#   mail-data:
+#     volumeName: mail-data
+#     mountPath: /var/mail
+#   mail-state:
+#     volumeName: mail-state
+#     mountPath: /var/mail-state
+#   mail-log:
+#     volumeName: mail-log
+#     mountPath: /var/log/mail
+
+# monitoring:
+#   service:
+#     scrape: "true"
+#     probe: "false"
+#     path: "/metrics"
+#     port: "9102"
+#   pod:
+#     scrape: "true"
+#     probe: "false"
+#     path: "/metrics"
+#     port: "9102"
+
+# rspamd:
+#   ingress:
+#     enabled: false
+#     ingressClassName: nginx
+#     annotations: {}
+#     host: rspamd.example.com
+#     path: /
+#     tls:
+#       enabled: false
+
+# dovecot:
+#   fullTextSearch:
+#     enabled: false
+#     verbose: 0
+#     resources:
+#       memory: 2GB
+#     cron:
+#       enabled: true
+#       schedule: "0 4 * * *"
+
+# proxyProtocol:
+#   enabled: true
+#   trustedNetworks: "10.0.0.0/8 192.168.0.0/16 172.16.0.0/12"
+
+# Metrics specific to mailserver are turned off to save resources.
+# Observe via pod metrics for now.
+# 
+# metrics:
+#   enabled: false
+#   image:
+#     name: blackflysolutions/postfix-exporter@sha256
+#     tag: 7ed7c0534112aff5b44757ae84a206bf659171631edfc325c3c1638d78e74f73
+#     pullPolicy: "IfNotPresent"
+#   resources:
+#     requests:
+#       memory: "256Mi"
+
+# configMaps:
+#   dovecot.cf:
+#     create: true
+#     path: dovecot.cf
+#     data: |
+#       {{- if .Values.proxyProtocol.enabled }}
+#       haproxy_trusted_networks = {{ .Values.proxyProtocol.trustedNetworks }}
+#       {{- end }}
+  
+#   fts-xapian-plugin.conf:
+#     create: true
+#     path: /etc/dovecot/conf.d/10-plugin.conf
+#     data: |
+#       {{- if .Values.dovecot.fullTextSearch.enabled }}
+#       mail_plugins = $mail_plugins fts fts_xapian
+#       {{- end }}
+  
+#   user-patches.sh:
+#     create: true
+#     path: user-patches.sh
+#     data: |
+#       #!/bin/bash
+
+# secrets: {}

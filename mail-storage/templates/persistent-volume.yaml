@@ -19,24 +19,6 @@ spec:
     type: DirectoryOrCreate
 ---
 # -----------------------------------------
-# 1.2. PersistentVolumeClaim for mail-config
-# -----------------------------------------
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mail-config-pvc
-  namespace: {{ .Values.namespace }}
-  labels:
-    {{- include "mail-storage.labels" . | nindent 4 }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-mail-config
-  resources:
-    requests:
-      storage: 1Mi
----
-# -----------------------------------------
 # 2.1. PersistentVolume for mail-data
 # -----------------------------------------
 apiVersion: v1
@@ -55,24 +37,6 @@ spec:
   hostPath:
     path: /var/mail
     type: DirectoryOrCreate
----
-# -----------------------------------------
-# 2.2. PersistentVolumeClaim for mail-data
-# -----------------------------------------
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mail-data-pvc
-  namespace: {{ .Values.namespace }}
-  labels:
-    {{- include "mail-storage.labels" . | nindent 4 }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-mail-data
-  resources:
-    requests:
-      storage: 10Gi
 ---
 # -----------------------------------------
 # 3.1. PersistentVolume for mail-state
@@ -95,24 +59,6 @@ spec:
     type: DirectoryOrCreate
 ---
 # -----------------------------------------
-# 3.2. PersistentVolumeClaim for mail-state
-# -----------------------------------------
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mail-state-pvc
-  namespace: {{ .Values.namespace }}
-  labels:
-    {{- include "mail-storage.labels" . | nindent 4 }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-mail-state
-  resources:
-    requests:
-      storage: 1Gi
----
-# -----------------------------------------
 # 4.1. PersistentVolume for mail-log
 # -----------------------------------------
 apiVersion: v1
@@ -131,21 +77,3 @@ spec:
   hostPath:
     path: /var/log/mail
     type: DirectoryOrCreate
----
-# -----------------------------------------
-# 4.2. PersistentVolumeClaim for mail-log
-# -----------------------------------------
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mail-log-pvc
-  namespace: {{ .Values.namespace }}
-  labels:
-    {{- include "mail-storage.labels" . | nindent 4 }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-mail-log
-  resources:
-    requests:
-      storage: 1Gi
