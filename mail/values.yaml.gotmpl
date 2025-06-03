@@ -1,0 +1,206 @@
+docker-mailserver:
+  service:
+    type: ClusterIP
+    behind_proxy: true
+    proxy_trusted_networks: "10.42.0.0/16"
+
+  # TLS and domain settings
+  env:
+    - name: OVERRIDE_HOSTNAME
+      value: "mail.{{ .Values.DOMAIN }}"
+    - name: POSTMASTER_ADDRESS
+      value: "postmaster@{{ .Values.DOMAIN }}"
+    - name: SSL_TYPE
+      value: manual
+    # Security settings
+    - name: ENABLE_CLAMAV
+      value: "1"
+    - name: ENABLE_SPAMASSASSIN
+      value: "1"
+    - name: SPAMASSASSIN_SPAM_TO_INBOX
+      value: "0"
+    - name: ENABLE_FAIL2BAN
+      value: "1"
+    - name: ENABLE_POSTGREY
+      value: "1"
+    # Secure defaults - Anti-relay protection
+    - name: PERMIT_DOCKER
+      value: none
+    - name: POSTSCREEN_ACTION
+      value: enforce
+    # Only accept mail for our domain
+    - name: POSTFIX_MYDESTINATION
+      value: ""  # Don't accept mail for bare hostname
+    - name: POSTFIX_DESTINATION_CONCURRENCY_LIMIT
+      value: "1"  # Limit concurrent deliveries
+    - name: POSTFIX_DESTINATION_RATE_DELAY
+      value: 1s  # Add delay between deliveries
+    - name: POSTFIX_SMTPD_RECIPIENT_RESTRICTIONS
+      value: "permit_sasl_authenticated,permit_mynetworks,reject_unauth_destination,reject"
+    - name: ENABLE_POP3
+      value: "0"
+    - name: POSTFIX_MESSAGE_SIZE_LIMIT
+      value: "25600000"  # Limit messages to 25MB
+    # Authentication required for sending
+    - name: SMTP_ONLY
+      value: "0"
+    - name: ENABLE_SASLAUTHD
+      value: "0"  # Use Dovecot authentication
+    - name: POSTFIX_REJECT_UNKNOWN_CLIENT_HOSTNAME
+      value: "1"  # Reject clients without proper DNS
+    - name: PERMIT_EMPTY_SENDER_DOMAIN
+      value: "0"  # Reject emails with empty sender domain
+    # Anti-spam measures
+    - name: ENABLE_POSTFIX_VIRTUAL_TRANSPORT
+      value: "1"  # Required for proper mail routing
+    - name: SPAMASSASSIN_KILL_SCORE
+      value: "15"  # Auto-reject very spammy messages
+    # DKIM signing
+    - name: ENABLE_OPENDKIM
+      value: "1"
+    - name: ENABLE_OPENDMARC
+      value: "1"
+    - name: ENABLE_POLICYD_SPF
+      value: "1"
+    # Mail server secrets
+    - name: ADMIN_EMAIL
+      value: admin@x3huang.dev
+    - name: POSTMASTER_ADDRESS
+      value: postmaster@x3huang.dev
+    # DKIM selector for key generation
+    - name: DMS_DKIM_SELECTOR
+      value: mail
+
+  # Resources
+  resources:
+    limits:
+      cpu: "100m"
+      memory: "256Mi"
+
+  # Certificate settings
+  certificate:
+    enabled: true
+    issuerRef:
+      name: letsencrypt-prod
+      kind: ClusterIssuer
+    hosts:
+      - mail.{{ .Values.DOMAIN }}
+      # - imap.{{ .Values.DOMAIN }}
+      # - smtp.{{ .Values.DOMAIN }}
+
+  haproxy:
+    tcp:
+      25:   mail/mailserver-docker-mailserver:10025::PROXY-V1
+      587:  mail/mailserver-docker-mailserver:10587::PROXY-V1
+      993:  mail/mailserver-docker-mailserver:10993::PROXY-V1
+      995:  mail/mailserver-docker-mailserver:10995::PROXY-V1
+    service:
+      externalTrafficPolicy: Cluster   # Doesn’t preserve IP (Traefik will handle IP via PROX
+
+  # -------------------------
+  # Persistence: use existing PVCs
+  # -------------------------
+  persistence:
+    # We disable the built‐in 'hostPath' blocks here.
+    enabled: true
+    # Now, for each named volume, tell Helm which existingClaim to use:
+    mailConfig:
+      enabled: true
+      existingClaim: mail-config-pvc
+    mailData:
+      enabled: true
+      existingClaim: mail-data-pvc
+    mailState:
+      enabled: true
+      existingClaim: mail-state-pvc
+    mailLog:
+      enabled: true
+      existingClaim: mail-log-pvc
+
+  # -------------------------
+  # PodTemplate: mount PVCs + Secret + ConfigMap
+  # -------------------------
+  podTemplate:
+    extraVolumes:
+      # mount mail-config-pvc as /tmp/docker-mailserver
+      - name: mail-config
+        persistentVolumeClaim:
+          claimName: mail-config-pvc
+
+      # mount mail-data-pvc as /var/mail
+      - name: mail-data
+        persistentVolumeClaim:
+          claimName: mail-data-pvc
+
+      # mount mail-state-pvc as /var/mail-state
+      - name: mail-state
+        persistentVolumeClaim:
+          claimName: mail-state-pvc
+
+      # mount mail-log-pvc as /var/log/mail
+      - name: mail-log
+        persistentVolumeClaim:
+          claimName: mail-log-pvc
+
+      # project both the Secret (accounts file) and ConfigMap (aliases) into /config
+      - name: config-data
+        projected:
+          sources:
+            - secret:
+                name: helmfile-secret-mail
+                items:
+                  - key: mail.cf
+                    path: postfix-accounts.cf
+            - configMap:
+                name: mailserver-docker-mailserver-postfix-virtual
+                items:
+                  - key: postfix-virtual.cf
+                    path: postfix-virtual.cf
+
+  extraVolumeMounts:
+    - name: mail-config
+      mountPath: /tmp/docker-mailserver
+
+    - name: mail-data
+      mountPath: /var/mail
+
+    - name: mail-state
+      mountPath: /var/mail-state
+
+    - name: mail-log
+      mountPath: /var/log/mail
+
+    - name: config-data
+      mountPath: /config
+
+  # -------------------------
+  # Configure the virtual aliases via a ConfigMap (Helm will create it)
+  # -------------------------
+  configMaps:
+    postfix-virtual:
+      create: true
+      path: postfix-virtual.cf
+      data: |
+        # Any additional aliases you want—in addition to those in the Secret:
+        # Format: alias@domain target@domain
+        admin@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+        postmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+        abuse@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+        hostmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+
+  # Configure email aliases via configMap directly in the config file location
+  initContainers:
+    - name: setup-configs
+      image: busybox
+      command:
+        - /bin/sh
+        - -c
+        - |
+          cp -v /config/* /tmp/docker-mailserver/ && \
+          chmod 0600 /tmp/docker-mailserver/postfix-accounts.cf && \
+          chmod 0600 /tmp/docker-mailserver/postfix-virtual.cf
+      volumeMounts:
+        - name: config-data
+          mountPath: /config
+        - name: mail-config
+          mountPath: /tmp/docker-mailserver
