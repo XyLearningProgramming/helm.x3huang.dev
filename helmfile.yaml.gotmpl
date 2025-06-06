@@ -119,8 +119,7 @@ releases:
     # 
     needs:
       - cert-manager/cert-manager
-      # Traefik forwarding client id with PROXY
-      - kube-system/kube-system
+      - mail/mail-storage
     values:
       - values/{{ .Environment.Name }}.yaml
       - mail/values.yaml.gotmpl

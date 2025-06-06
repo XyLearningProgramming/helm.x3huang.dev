@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Values.certManagerNamespace }}
 spec:
   acme:
-    server: {{ .Values.ACME_SERVER }}
+    server: {{ .Values.acme.server }}
     email: {{ .Values.EMAIL }}
     privateKeySecretRef:
       name: {{ .Values.clusterIssuer.privateKeySecret }}

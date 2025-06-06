@@ -3,8 +3,8 @@
 certificate: "mail-{{ .Values.DOMAIN }}-tls"
 
 deployment:
-  # replicas: 1
-  
+  nodeSelector:
+    kubernetes.io/hostname: {{ .Values.EMAIL_NODE }}
   # Initialize mail configuration using initContainer
   initContainers:
     - name: setup-mail-config
@@ -69,35 +69,13 @@ deployment:
     POSTGREY_MAX_AGE: "35"
     POSTGREY_TEXT: "Delayed by Postgrey"
 
-  # securityContext:
-  #   runAsUser: 5000
-  #   runAsGroup: 5000
-
-  # containerSecurityContext:
-  #   readOnlyRootFilesystem: false
-  #   privileged: false
-
   resources:
     requests:
-      cpu: "50M"
+      cpu: "100m"
       memory: "64Mi"
     limits:
-      cpu: "500M"
+      cpu: "1"
       memory: "512Mi"
-
-#   tolerations: []
-#   initContainers: []
-#   extraVolumeMounts: []
-#   extraVolumes: []
-
-# service:
-#   type: "ClusterIP"
-#   port: 8080  # Web interface port
-#   loadBalancer:
-#     allowedIps:
-#       - "0.0.0.0/0"
-#   annotations: {}
-#   labels: {}
 
 persistent_volume_claims:
   mail-config:
@@ -106,109 +84,53 @@ persistent_volume_claims:
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-config"
+    # {{- if and .Values.EMAIL_NODE (ne .Values.EMAIL_NODE "") }}
+    # selector:
+    #   matchExpressions:
+    #     - key: kubernetes.io/hostname
+    #       operator: In
+    #       values:
+    #         - {{ .Values.EMAIL_NODE }}
+    # {{- end }}
   mail-data:
     enabled: true
     size: "10Gi"
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-data"
+    # {{- if and .Values.EMAIL_NODE (ne .Values.EMAIL_NODE "") }}
+    # selector:
+    #   matchExpressions:
+    #     - key: kubernetes.io/hostname
+    #       operator: In
+    #       values:
+    #         - {{ .Values.EMAIL_NODE }}
+    # {{- end }}
   mail-state:
     enabled: true
     size: "1Gi"
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-state"
+    # {{- if and .Values.EMAIL_NODE (ne .Values.EMAIL_NODE "") }}
+    # selector:
+    #   matchExpressions:
+    #     - key: kubernetes.io/hostname
+    #       operator: In
+    #       values:
+    #         - {{ .Values.EMAIL_NODE }}
+    # {{- end }}
   mail-log:
     enabled: true
     size: "1Gi"
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-log"
-
-# persistence:
-#   mail-config:
-#     volumeName: mail-config
-#     mountPath: /tmp/docker-mailserver
-#   mail-data:
-#     volumeName: mail-data
-#     mountPath: /var/mail
-#   mail-state:
-#     volumeName: mail-state
-#     mountPath: /var/mail-state
-#   mail-log:
-#     volumeName: mail-log
-#     mountPath: /var/log/mail
-
-# monitoring:
-#   service:
-#     scrape: "true"
-#     probe: "false"
-#     path: "/metrics"
-#     port: "9102"
-#   pod:
-#     scrape: "true"
-#     probe: "false"
-#     path: "/metrics"
-#     port: "9102"
-
-# rspamd:
-#   ingress:
-#     enabled: false
-#     ingressClassName: nginx
-#     annotations: {}
-#     host: rspamd.example.com
-#     path: /
-#     tls:
-#       enabled: false
-
-# dovecot:
-#   fullTextSearch:
-#     enabled: false
-#     verbose: 0
-#     resources:
-#       memory: 2GB
-#     cron:
-#       enabled: true
-#       schedule: "0 4 * * *"
-
-# proxyProtocol:
-#   enabled: true
-#   trustedNetworks: "10.0.0.0/8 192.168.0.0/16 172.16.0.0/12"
-
-# Metrics specific to mailserver are turned off to save resources.
-# Observe via pod metrics for now.
-# 
-# metrics:
-#   enabled: false
-#   image:
-#     name: blackflysolutions/postfix-exporter@sha256
-#     tag: 7ed7c0534112aff5b44757ae84a206bf659171631edfc325c3c1638d78e74f73
-#     pullPolicy: "IfNotPresent"
-#   resources:
-#     requests:
-#       memory: "256Mi"
-
-# configMaps:
-#   dovecot.cf:
-#     create: true
-#     path: dovecot.cf
-#     data: |
-#       {{- if .Values.proxyProtocol.enabled }}
-#       haproxy_trusted_networks = {{ .Values.proxyProtocol.trustedNetworks }}
-#       {{- end }}
-  
-#   fts-xapian-plugin.conf:
-#     create: true
-#     path: /etc/dovecot/conf.d/10-plugin.conf
-#     data: |
-#       {{- if .Values.dovecot.fullTextSearch.enabled }}
-#       mail_plugins = $mail_plugins fts fts_xapian
-#       {{- end }}
-  
-#   user-patches.sh:
-#     create: true
-#     path: user-patches.sh
-#     data: |
-#       #!/bin/bash
-
-# secrets: {}
+    # {{- if and .Values.EMAIL_NODE (ne .Values.EMAIL_NODE "") }}
+    # selector:
+    #   matchExpressions:
+    #     - key: kubernetes.io/hostname
+    #       operator: In
+    #       values:
+    #         - {{ .Values.EMAIL_NODE }}
+    # {{- end }}

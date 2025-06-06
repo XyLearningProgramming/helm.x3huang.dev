@@ -159,3 +159,6 @@ dashboard:
     limits:
       memory: "128Mi" # (128 MiB)
       cpu: "100m" # (0.1 vCPU)
+
+acme:
+  server: "https://acme-v02.api.letsencrypt.org/directory"

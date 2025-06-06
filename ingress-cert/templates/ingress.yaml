@@ -14,11 +14,6 @@ spec:
     - hosts:
         - {{ .Values.DOMAIN }}
       secretName: {{ .Values.DOMAIN }}-tls
-    - hosts:
-        - "mail.{{ .Values.DOMAIN }}"
-        - "smtp.{{ .Values.DOMAIN }}"
-        - "imap.{{ .Values.DOMAIN }}"
-      secretName: "mail-{{ .Values.DOMAIN }}-tls"
   rules:
     - host: {{ .Values.DOMAIN }}
       http:

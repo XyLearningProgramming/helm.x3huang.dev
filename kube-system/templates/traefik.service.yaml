@@ -6,6 +6,7 @@ metadata:
   labels:
     {{- include "kube-system.labels" . | nindent 4 }}
     app: {{ include "kube-system.fullname" . }}
+# Expose traefik metrics port and let prom. scrape it 
 spec:
   type: {{ .Values.service.type }}
   ports:

@@ -123,9 +123,3 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
-mail:
-  entryPoint:
-    name: mail
-  service:
-    name: mailserver-docker-mailserver.mail # serviceName.namespace
