@@ -16,8 +16,9 @@ deployment:
           cp /mail-secret/mail.cf postfix-accounts.cf
           chmod 0600 postfix-accounts.cf
           
-          # Create alias configuration
-          cat > postfix-virtual.cf << 'EOF'
+          # Create alias configuration - ensure clean state
+          rm -f /tmp/docker-mailserver/postfix-virtual.cf
+          cat > /tmp/docker-mailserver/postfix-virtual.cf << 'EOF'
           # Mail aliases
           admin@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
           postmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
