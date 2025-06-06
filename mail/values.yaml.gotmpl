@@ -12,9 +12,10 @@ deployment:
       command: ["/bin/sh", "-c"]
       args:
         - |
-          # Copy account configuration
-          cp /mail-secret/mail.cf postfix-accounts.cf
-          chmod 0600 postfix-accounts.cf
+          # Copy account configuration - ensure clean state
+          rm -f /tmp/docker-mailserver/postfix-accounts.cf
+          cp /mail-secret/mail.cf /tmp/docker-mailserver/postfix-accounts.cf
+          chmod 0600 /tmp/docker-mailserver/postfix-accounts.cf
           
           # Create alias configuration - ensure clean state
           rm -f /tmp/docker-mailserver/postfix-virtual.cf
