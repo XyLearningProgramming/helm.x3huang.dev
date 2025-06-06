@@ -7,8 +7,8 @@ spec:
   secretName: mail-{{ .Values.DOMAIN }}-tls
   dnsNames:
     - mail.{{ .Values.DOMAIN }}
-    - smtp.{{ .Values.DOMAIN }}
-    - imap.{{ .Values.DOMAIN }}
+    # - smtp.{{ .Values.DOMAIN }}
+    # - imap.{{ .Values.DOMAIN }}
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
