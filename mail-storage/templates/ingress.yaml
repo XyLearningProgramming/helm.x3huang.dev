@@ -1,68 +1,126 @@
-# mail-imaps-traefik.yaml
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRouteTCP
-metadata:
-  name: {{ include "mail-storage.fullname" . }}-imaps-ingress
-  namespace: {{ .Values.namespace }}
-  labels:
-    {{- include "mail-storage.labels" . | nindent 4 }}
-spec:
-  entryPoints:
-    - {{ .Values.namespace }}-imaps           # matches the static entryPoint :993 we created above
-  routes:
-    - match: HostSNI(`*`)  # match all TLS hosts (mail clients do a TLS handshake first)
-      services:
-        - name: {{ .Values.service.name }}
-          port: 10993      # PROXY-port = 10000 + 993
-          sendProxy: true  # instructs Traefik to prepend the PROXY header
+{{- /*
+  mail-storage/templates/ingress.yaml
+  Only the “proxy” ports are exposed via Traefik TCP IngressRouteTCP. 
+  - SMTP on port 25 → proxy port 12525
+  - SMTPS (submission on 465) → proxy port 10465
+  - Submission (STARTTLS on 587) → proxy port 10587
+  - IMAP on 143 → proxy port 10143
+  - IMAPS on 993 → proxy port 10993
+  We deliberately omit Rspamd (11334) and any non‐proxy ports.
+*/ -}}
+
+{{- $svc := .Values.service.name -}}
+{{- $ns  := .Values.namespace   -}}
+{{- $labels := include "mail-storage.labels" . | nindent 4 -}}
+
 ---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for plain SMTP (port 25 via smtp-proxy=12525)                   │
+# └──────────────────────────────────────────────────────────────────────────┘
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRouteTCP
 metadata:
   name: {{ include "mail-storage.fullname" . }}-smtp-ingress
-  namespace: {{ .Values.namespace }}
+  namespace: {{ $ns }}
   labels:
-    {{- include "mail-storage.labels" . | nindent 4 }}
+{{ $labels }}
 spec:
+  # This entryPoint must exist in your Traefik static config (e.g. ports.toml):
+  #   [entryPoints."{{ $ns }}-smtp"]
+  #     address = ":25"
   entryPoints:
-    - {{ .Values.namespace }}-smtp
+    - {{ $ns }}-smtp
   routes:
     - match: HostSNI(`*`)
       services:
-        - name: {{ .Values.service.name }}
-          port: 10025
-          sendProxy: true
+        - name: {{ $svc }}
+          port: 12525       # corresponds to smtp-proxy in your Service
+          sendProxy: true   # prepend PROXY header so mailserver sees original client IP
+
 ---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for SMTPS (submission on port 465 via subs-proxy=10465)         │
+# └──────────────────────────────────────────────────────────────────────────┘
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "mail-storage.fullname" . }}-submissions-ingress
+  namespace: {{ $ns }}
+  labels:
+{{ $labels }}
+spec:
+  # Traefik entryPoint “<namespace>-submissions” must be bound to port 465
+  entryPoints:
+    - {{ $ns }}-submissions
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: {{ $svc }}
+          port: 10465      # corresponds to subs-proxy in your Service
+          sendProxy: true
+
+---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for Submission (STARTTLS on port 587 → proxy 10587)             │
+# └──────────────────────────────────────────────────────────────────────────┘
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRouteTCP
 metadata:
   name: {{ include "mail-storage.fullname" . }}-submission-ingress
-  namespace: {{ .Values.namespace }}
+  namespace: {{ $ns }}
   labels:
-    {{- include "mail-storage.labels" . | nindent 4 }}
+{{ $labels }}
 spec:
+  # Traefik entryPoint “<namespace>-submission” must be bound to port 587
   entryPoints:
-    - {{ .Values.namespace }}-submission
+    - {{ $ns }}-submission
   routes:
     - match: HostSNI(`*`)
       services:
-        - name: {{ .Values.service.name }}
-          port: 10587
+        - name: {{ $svc }}
+          port: 10587      # corresponds to sub-proxy in your Service
           sendProxy: true
+
 ---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for plain IMAP (port 143 → proxy 10143)                         │
+# └──────────────────────────────────────────────────────────────────────────┘
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRouteTCP
 metadata:
-  name: {{ include "mail-storage.fullname" . }}-pop3-ingress
-  namespace: {{ .Values.namespace }}
+  name: {{ include "mail-storage.fullname" . }}-imap-ingress
+  namespace: {{ $ns }}
   labels:
-    {{- include "mail-storage.labels" . | nindent 4 }}
+{{ $labels }}
 spec:
+  # Traefik entryPoint “<namespace>-imap” must be bound to port 143
   entryPoints:
-    - {{ .Values.namespace }}-pop3
+    - {{ $ns }}-imap
   routes:
     - match: HostSNI(`*`)
       services:
-        - name: {{ .Values.service.name }}
-          port: 10995
+        - name: {{ $svc }}
+          port: 10143      # corresponds to imap-proxy in your Service
+          sendProxy: true
+
+---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for IMAPS (TLS on port 993 → proxy 10993)                       │
+# └──────────────────────────────────────────────────────────────────────────┘
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "mail-storage.fullname" . }}-imaps-ingress
+  namespace: {{ $ns }}
+  labels:
+{{ $labels }}
+spec:
+  # Traefik entryPoint “<namespace>-imaps” must be bound to port 993
+  entryPoints:
+    - {{ $ns }}-imaps
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: {{ $svc }}
+          port: 10993      # corresponds to imaps-proxy in your Service
           sendProxy: true

@@ -40,6 +40,104 @@ Server Version: v1.32.4+k3s1
 2. Change `./values` if domain name changes.
 3. Add files in `./secrets` as secrets in workflow.
 4. Run `sudo mount --make-shared /` so that prom. node exporter container can start successfully.
+5. Traefik config is managed by k3s since I do not install another one. So... ALL entrypoints are configured in `/var/lib/rancher/k3s/server/manifests/traefik-config.yaml` inside the main host.
+
+```yaml
+# /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik       # must exactly match the HelmChart name
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    ########################################
+    ## 1) METRICS (Prometheus) ENTRYPOINT ##
+    ########################################
+
+    # Enable Prometheus metrics in Traefik and bind its entryPoint to :8082
+    metrics:
+      prometheus:
+        enabled: true
+        # This tells Traefik which entryPoint to use for Prometheus metrics
+        entryPoint: metrics
+
+    ################################################################
+    ## 2) ADDITIONAL ARGUMENTS (all entryPoints listed below)    ##
+    ################################################################
+
+    # Each "--entryPoints.<name>.address=:<port>" line ​binds Traefik’s pod to that port.
+    # We also pass proxyProtocol.trustedIPs so Docker-Mailserver sees the real client IP.
+    additionalArguments:
+      # Metrics entryPoint is still commented out:
+      # - "--entryPoints.metrics.address=:9100"
+
+      # ─── MAIL ENTRYPOINTS (original ports) ─────────────────────────────
+      - "--entryPoints.mail-smtp.address=:25"
+      - "--entryPoints.mail-smtp.proxyProtocol.trustedIPs=0.0.0.0/0"
+
+      - "--entryPoints.mail-submission.address=:587"
+      - "--entryPoints.mail-submission.proxyProtocol.trustedIPs=0.0.0.0/0"
+
+      - "--entryPoints.mail-imaps.address=:993"
+      - "--entryPoints.mail-imaps.proxyProtocol.trustedIPs=0.0.0.0/0"
+
+      - "--entryPoints.mail-pop3s.address=:995"
+      - "--entryPoints.mail-pop3s.proxyProtocol.trustedIPs=0.0.0.0/0"
+
+    ############################################################
+    ## 3) EXPOSED PORTS (map each entryPoint → external port) ##
+    ############################################################
+
+    # Under "ports:" we declare which ports Traefik’s Service object should open on each Node,
+    # and how they map back to the containerPort (the same value here).
+    ports:
+      # # ─── METRICS PORT ───────────────────────────────────────────────
+      # metrics:
+      #   port: 9100
+      #   expose:
+      #     default: true
+      #   exposedPort: 9100
+      #   protocol: TCP
+
+      # ─── MAIL: SMTP (listen on :25, forward internally to proxy-port 12525) ─┐
+      mail-smtp:
+        port: 25
+        expose:
+          default: true
+        exposedPort: 25
+        protocol: TCP
+      # ────────────────────────────────────────────────────────────────────────┘
+
+      # ─── MAIL: Submission (listen on :587 → forward internally to proxy-port 10587) ─┐
+      mail-submission:
+        port: 587
+        expose:
+          default: true
+        exposedPort: 587
+        protocol: TCP
+      # ────────────────────────────────────────────────────────────────────────────────┘
+
+      # ─── MAIL: IMAPS (listen on :993 → forward internally to proxy-port 10993) ─┐
+      mail-imaps:
+        port: 993
+        expose:
+          default: true
+        exposedPort: 993
+        protocol: TCP
+      # ──────────────────────────────────────────────────────────────────────────────┘
+
+      # ─── MAIL: POP3S (listen on :995 → forward internally to proxy-port 10995) ─┐
+      mail-pop3s:
+        port: 995
+        expose:
+          default: true
+        exposedPort: 995
+        protocol: TCP
+      # ─────────────────────────────────────────────────────────────────────────────┘
+
+```
 
 ## Helpers
 
