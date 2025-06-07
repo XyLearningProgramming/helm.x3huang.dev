@@ -86,53 +86,21 @@ persistent_volume_claims:
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-config"
-    # {{- if and .Values.EMAIL_NODE (ne .Values.EMAIL_NODE "") }}
-    # selector:
-    #   matchExpressions:
-    #     - key: kubernetes.io/hostname
-    #       operator: In
-    #       values:
-    #         - {{ .Values.EMAIL_NODE }}
-    # {{- end }}
   mail-data:
     enabled: true
     size: "10Gi"
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-data"
-    # {{- if and .Values.EMAIL_NODE (ne .Values.EMAIL_NODE "") }}
-    # selector:
-    #   matchExpressions:
-    #     - key: kubernetes.io/hostname
-    #       operator: In
-    #       values:
-    #         - {{ .Values.EMAIL_NODE }}
-    # {{- end }}
   mail-state:
     enabled: true
     size: "1Gi"
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-state"
-    # {{- if and .Values.EMAIL_NODE (ne .Values.EMAIL_NODE "") }}
-    # selector:
-    #   matchExpressions:
-    #     - key: kubernetes.io/hostname
-    #       operator: In
-    #       values:
-    #         - {{ .Values.EMAIL_NODE }}
-    # {{- end }}
   mail-log:
     enabled: true
     size: "1Gi"
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-log"
-    # {{- if and .Values.EMAIL_NODE (ne .Values.EMAIL_NODE "") }}
-    # selector:
-    #   matchExpressions:
-    #     - key: kubernetes.io/hostname
-    #       operator: In
-    #       values:
-    #         - {{ .Values.EMAIL_NODE }}
-    # {{- end }}
