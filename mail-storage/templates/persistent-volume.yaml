@@ -1,5 +1,5 @@
 # -----------------------------------------
-# 1.1. PersistentVolume for mail-config
+# 1.1. PersistentVolume for mail-config (local)
 # -----------------------------------------
 apiVersion: v1
 kind: PersistentVolume
@@ -14,6 +14,8 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Delete
   storageClassName: local-mail-config
+  local:
+    path: /tmp/docker-mailserver
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -22,14 +24,9 @@ spec:
           operator: In
           values:
           - {{ .Values.EMAIL_NODE }}
-  # Other choices: https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner
-  # https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner
-  hostPath:
-    path: /tmp/docker-mailserver
-    type: DirectoryOrCreate
 ---
 # -----------------------------------------
-# 2.1. PersistentVolume for mail-data
+# 2.1. PersistentVolume for mail-data (local)
 # -----------------------------------------
 apiVersion: v1
 kind: PersistentVolume
@@ -44,6 +41,8 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Delete
   storageClassName: local-mail-data
+  local:
+    path: /var/mail
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -52,12 +51,9 @@ spec:
           operator: In
           values:
           - {{ .Values.EMAIL_NODE }}
-  hostPath:
-    path: /var/mail
-    type: DirectoryOrCreate
 ---
 # -----------------------------------------
-# 3.1. PersistentVolume for mail-state
+# 3.1. PersistentVolume for mail-state (local)
 # -----------------------------------------
 apiVersion: v1
 kind: PersistentVolume
@@ -72,6 +68,8 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Delete
   storageClassName: local-mail-state
+  local:
+    path: /var/mail-state
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -80,12 +78,9 @@ spec:
           operator: In
           values:
           - {{ .Values.EMAIL_NODE }}
-  hostPath:
-    path: /var/mail-state
-    type: DirectoryOrCreate
 ---
 # -----------------------------------------
-# 4.1. PersistentVolume for mail-log
+# 4.1. PersistentVolume for mail-log (local)
 # -----------------------------------------
 apiVersion: v1
 kind: PersistentVolume
@@ -100,6 +95,8 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Delete
   storageClassName: local-mail-log
+  local:
+    path: /var/log/mail
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -108,12 +105,10 @@ spec:
           operator: In
           values:
           - {{ .Values.EMAIL_NODE }}
-  hostPath:
-    path: /var/log/mail
-    type: DirectoryOrCreate
 ---
-# StorageClasses
-# ---
+# -----------------------------------------
+# StorageClasses for all four volumes
+# -----------------------------------------
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
