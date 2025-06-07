@@ -22,22 +22,25 @@ kubeApiServer:
 kubelet:
   enabled: true
 
-# Enable node exporter to collect host metrics
-prometheus-node-exporter:
-  enabled: true
-  # hostRootfs: true
-  extraArgs:
-    # - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
-    - --collector.systemd
-    - --collector.processes
-    - --collector.cpu
-    - --collector.meminfo
-    - --collector.netdev
-    - --collector.loadavg
-    # - --collector.diskstats
-    # - --collector.filesystem
-    - --no-collector.filesystem # it is usually more than enough.
-    - --no-collector.diskstats
+# For node-exporter, default is good enough.
+# Ref: https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
+# 
+# # Enable node exporter to collect host metrics
+# prometheus-node-exporter:
+#   enabled: true
+#   # hostRootfs: true
+#   extraArgs:
+#     # - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+#     - --collector.systemd
+#     - --collector.processes
+#     - --collector.cpu
+#     - --collector.meminfo
+#     - --collector.netdev
+#     - --collector.loadavg
+#     # - --collector.diskstats
+#     # - --collector.filesystem
+#     - --no-collector.filesystem # it is usually more than enough.
+#     - --no-collector.diskstats
 
 prometheus:
   prometheusSpec:
