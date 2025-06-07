@@ -12,7 +12,7 @@ spec:
     storage: 1Mi
   accessModes:
     - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
+  persistentVolumeReclaimPolicy: Delete
   storageClassName: local-mail-config
   nodeAffinity:
     required:
@@ -22,6 +22,8 @@ spec:
           operator: In
           values:
           - {{ .Values.EMAIL_NODE }}
+  # Other choices: https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner
+  # https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner
   hostPath:
     path: /tmp/docker-mailserver
     type: DirectoryOrCreate
@@ -40,7 +42,7 @@ spec:
     storage: 10Gi
   accessModes:
     - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
+  persistentVolumeReclaimPolicy: Delete
   storageClassName: local-mail-data
   nodeAffinity:
     required:
@@ -68,7 +70,7 @@ spec:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
+  persistentVolumeReclaimPolicy: Delete
   storageClassName: local-mail-state
   nodeAffinity:
     required:
@@ -96,7 +98,7 @@ spec:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
+  persistentVolumeReclaimPolicy: Delete
   storageClassName: local-mail-log
   nodeAffinity:
     required:
@@ -120,7 +122,7 @@ metadata:
     {{- include "mail-storage.labels" . | nindent 4 }}
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Retain
+reclaimPolicy: Delete
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -130,7 +132,7 @@ metadata:
     {{- include "mail-storage.labels" . | nindent 4 }}
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Retain
+reclaimPolicy: Delete
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -140,7 +142,7 @@ metadata:
     {{- include "mail-storage.labels" . | nindent 4 }}
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Retain
+reclaimPolicy: Delete
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -150,4 +152,4 @@ metadata:
     {{- include "mail-storage.labels" . | nindent 4 }}
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Retain
+reclaimPolicy: Delete
