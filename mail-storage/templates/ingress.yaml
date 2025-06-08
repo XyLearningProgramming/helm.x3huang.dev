@@ -39,6 +39,8 @@ spec:
           # https://docker-mailserver.github.io/docker-mailserver/latest/examples/tutorials/mailserver-behind-proxy/
           proxyProtocol:
             version: 2
+  tls:
+    passthrough: true
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -62,6 +64,8 @@ spec:
           port: 10465      # corresponds to subs-proxy in your Service
           proxyProtocol:
             version: 2
+  tls:
+    passthrough: true
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -85,6 +89,8 @@ spec:
           port: 10587      # corresponds to sub-proxy in your Service
           proxyProtocol:
             version: 2
+  tls:
+    passthrough: true
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -108,6 +114,8 @@ spec:
           port: 10143      # corresponds to imap-proxy in your Service
           proxyProtocol:
             version: 2
+  tls:
+    passthrough: true
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -131,3 +139,5 @@ spec:
           port: 10993      # corresponds to imaps-proxy in your Service
           proxyProtocol:
             version: 2
+  tls:
+    passthrough: true
