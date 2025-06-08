@@ -35,7 +35,10 @@ spec:
       services:
         - name: {{ $svc }}
           port: 12525       # corresponds to smtp-proxy in your Service
-          sendProxy: true   # prepend PROXY header so mailserver sees original client IP
+          # Ref: https://doc.traefik.io/traefik/routing/providers/kubernetes-crd/#kind-ingressroutetcp
+          # https://docker-mailserver.github.io/docker-mailserver/latest/examples/tutorials/mailserver-behind-proxy/
+          proxyProtocol:
+            version: 2
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -57,7 +60,8 @@ spec:
       services:
         - name: {{ $svc }}
           port: 10465      # corresponds to subs-proxy in your Service
-          sendProxy: true
+          proxyProtocol:
+            version: 2
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -79,7 +83,8 @@ spec:
       services:
         - name: {{ $svc }}
           port: 10587      # corresponds to sub-proxy in your Service
-          sendProxy: true
+          proxyProtocol:
+            version: 2
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -101,7 +106,8 @@ spec:
       services:
         - name: {{ $svc }}
           port: 10143      # corresponds to imap-proxy in your Service
-          sendProxy: true
+          proxyProtocol:
+            version: 2
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -123,4 +129,5 @@ spec:
       services:
         - name: {{ $svc }}
           port: 10993      # corresponds to imaps-proxy in your Service
-          sendProxy: true
+          proxyProtocol:
+            version: 2

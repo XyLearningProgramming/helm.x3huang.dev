@@ -10,5 +10,5 @@ spec:
     - smtp.{{ .Values.DOMAIN }}
     - imap.{{ .Values.DOMAIN }}
   issuerRef:
-    name: letsencrypt-prod
+    name: {{ .Values.ISSUER_NAME }}
     kind: ClusterIssuer

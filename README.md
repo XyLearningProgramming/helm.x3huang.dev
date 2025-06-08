@@ -139,6 +139,15 @@ spec:
 
 ```
 
+6. Run these commands to make sure pv path exists (for mail deployment)
+
+```bash
+mkdir -p /var/log/mail
+mkdir -p /var/mail-state
+mkdir -p /var/mail
+mkdir -p /tmp/docker-mailserver
+```
+
 ## Helpers
 
 ```bash

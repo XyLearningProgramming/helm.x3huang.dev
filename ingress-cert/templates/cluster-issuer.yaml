@@ -1,15 +1,21 @@
+{{- $isProd := eq .Values.Environment "prod" -}}
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: {{ .Values.clusterIssuer.name }}
-  namespace: {{ .Values.certManagerNamespace }}
+  name: {{ .Values.ISSUER_NAME }}
+  labels:
+    {{- include "ingress-cert.labels" . | nindent 4 }}
 spec:
+  {{- if $isProd }}
   acme:
-    server: {{ .Values.acme.server }}
+    server: "https://acme-v02.api.letsencrypt.org/directory"
     email: {{ .Values.EMAIL }}
     privateKeySecretRef:
-      name: {{ .Values.clusterIssuer.privateKeySecret }}
+      name: {{ .Values.ISSUER_NAME }}
     solvers:
       - http01:
           ingress:
-            class: {{ .Values.clusterIssuer.ingressClass }}
+            class: "traefik"
+  {{- else }}
+  selfSigned: {}
+  {{- end }}

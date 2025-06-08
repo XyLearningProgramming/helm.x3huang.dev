@@ -1,3 +1,4 @@
 DOMAIN: "test.x3huang.dev"
 EMAIL: "test@x3huang.dev"
 EMAIL_NODE: "desktop-r3pjobj"
+ISSUER_NAME: "selfsigned-issuer"

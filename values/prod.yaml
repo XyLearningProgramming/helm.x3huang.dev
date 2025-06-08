@@ -1,3 +1,4 @@
 DOMAIN: "x3huang.dev"
 EMAIL: "info@x3huang.dev"
 EMAIL_NODE: "ethical-post-1.localdomain"
+ISSUER_NAME: letsencrypt-prod
