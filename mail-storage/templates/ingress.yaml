@@ -10,7 +10,7 @@
 */ -}}
 
 {{- $svc := .Values.service.name -}}
-{{- $ns  := .Values.namespace   -}}
+{{- $ns := .Release.Namespace -}}
 {{- $labels := include "mail-storage.labels" . | nindent 4 -}}
 
 ---
