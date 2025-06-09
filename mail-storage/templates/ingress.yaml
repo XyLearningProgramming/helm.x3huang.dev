@@ -17,7 +17,7 @@
 # ┌──────────────────────────────────────────────────────────────────────────┐
 # │ Ingress for plain SMTP (port 25 via smtp-proxy=12525)                   │
 # └──────────────────────────────────────────────────────────────────────────┘
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRouteTCP
 metadata:
   name: {{ include "mail-storage.fullname" . }}-smtp-ingress
@@ -46,7 +46,7 @@ spec:
 # ┌──────────────────────────────────────────────────────────────────────────┐
 # │ Ingress for SMTPS (submission on port 465 via subs-proxy=10465)         │
 # └──────────────────────────────────────────────────────────────────────────┘
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRouteTCP
 metadata:
   name: {{ include "mail-storage.fullname" . }}-submissions-ingress
@@ -71,7 +71,7 @@ spec:
 # ┌──────────────────────────────────────────────────────────────────────────┐
 # │ Ingress for Submission (STARTTLS on port 587 → proxy 10587)             │
 # └──────────────────────────────────────────────────────────────────────────┘
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRouteTCP
 metadata:
   name: {{ include "mail-storage.fullname" . }}-submission-ingress
@@ -96,7 +96,7 @@ spec:
 # ┌──────────────────────────────────────────────────────────────────────────┐
 # │ Ingress for plain IMAP (port 143 → proxy 10143)                         │
 # └──────────────────────────────────────────────────────────────────────────┘
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRouteTCP
 metadata:
   name: {{ include "mail-storage.fullname" . }}-imap-ingress
@@ -121,7 +121,7 @@ spec:
 # ┌──────────────────────────────────────────────────────────────────────────┐
 # │ Ingress for IMAPS (TLS on port 993 → proxy 10993)                       │
 # └──────────────────────────────────────────────────────────────────────────┘
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRouteTCP
 metadata:
   name: {{ include "mail-storage.fullname" . }}-imaps-ingress

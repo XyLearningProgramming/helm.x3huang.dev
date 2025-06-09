@@ -74,16 +74,16 @@ spec:
       # - "--entryPoints.metrics.address=:9100"
 
       # ─── MAIL ENTRYPOINTS (original ports) ─────────────────────────────
-      - "--entryPoints.mail-smtp.address=:25"
+      # - "--entryPoints.mail-smtp.address=:25"
       - "--entryPoints.mail-smtp.proxyProtocol.trustedIPs=0.0.0.0/0"
 
-      - "--entryPoints.mail-submission.address=:587"
+      # - "--entryPoints.mail-submission.address=:587"
       - "--entryPoints.mail-submission.proxyProtocol.trustedIPs=0.0.0.0/0"
 
-      - "--entryPoints.mail-imaps.address=:993"
+      # - "--entryPoints.mail-imaps.address=:993"
       - "--entryPoints.mail-imaps.proxyProtocol.trustedIPs=0.0.0.0/0"
 
-      - "--entryPoints.mail-pop3s.address=:995"
+      # - "--entryPoints.mail-pop3s.address=:995"
       - "--entryPoints.mail-pop3s.proxyProtocol.trustedIPs=0.0.0.0/0"
 
     ############################################################
