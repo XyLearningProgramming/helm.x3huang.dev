@@ -148,7 +148,3 @@ resources:
   limits:
     memory: "64Mi" # (64 MiB)
     cpu: "50m" # (0.05 vCPU)
-
-clusterIssuer:
-  name: letsencrypt-prod
-  ingressClass: traefik
