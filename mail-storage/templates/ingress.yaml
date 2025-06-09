@@ -31,7 +31,7 @@ spec:
   entryPoints:
     - {{ $ns }}-smtp
   routes:
-    - match: HostSNI(`*`)
+    - match: ClientIP(`0.0.0.0/0`)
       services:
         - name: {{ $svc }}
           port: 12525       # corresponds to smtp-proxy in your Service
@@ -39,8 +39,9 @@ spec:
           # https://docker-mailserver.github.io/docker-mailserver/latest/examples/tutorials/mailserver-behind-proxy/
           proxyProtocol:
             version: 2
-  tls:
-    passthrough: true
+  # Traefik configuration (tls: passthrough: true) is designed only for the implicit TLS model. It instructs Traefik to do nothing but wait for a TLS handshake (ClientHello packet) so it can sniff the SNI and pass the encrypted stream to the backend.
+  # tls:
+  #   passthrough: true
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -83,14 +84,12 @@ spec:
   entryPoints:
     - mail-sb    # Changed from {{ $ns }}-submission
   routes:
-    - match: HostSNI(`*`)
+    - match: ClientIP(`0.0.0.0/0`)
       services:
         - name: {{ $svc }}
           port: 10587
           proxyProtocol:
             version: 2
-  tls:
-    passthrough: true
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -108,14 +107,12 @@ spec:
   entryPoints:
     - {{ $ns }}-imap
   routes:
-    - match: HostSNI(`*`)
+    - match: ClientIP(`0.0.0.0/0`)
       services:
         - name: {{ $svc }}
           port: 10143      # corresponds to imap-proxy in your Service
           proxyProtocol:
             version: 2
-  tls:
-    passthrough: true
 
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
@@ -157,14 +154,13 @@ spec:
   entryPoints:
     - mail-pop3
   routes:
-    - match: HostSNI(`*`)
+    - match: ClientIP(`0.0.0.0/0`)
       services:
         - name: {{ $svc }}
           port: 10110      # corresponds to pop3-proxy in your Service
           proxyProtocol:
             version: 2
-  tls:
-    passthrough: true
+
 ---
 # ┌──────────────────────────────────────────────────────────────────────────┐
 # │ Ingress for POP3S (TLS on port 995 → proxy 10995)                       │
