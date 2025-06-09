@@ -1,0 +1,150 @@
+# -----------------------------------------
+# 1.1. PersistentVolume for mail-config (local)
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mail-config-pv
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 1Mi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: local-mail-config
+  local:
+    path: /tmp/docker-mailserver
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ .Values.EMAIL_NODE }}
+---
+# -----------------------------------------
+# 2.1. PersistentVolume for mail-data (local)
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mail-data-pv
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: local-mail-data
+  local:
+    path: /var/mail
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ .Values.EMAIL_NODE }}
+---
+# -----------------------------------------
+# 3.1. PersistentVolume for mail-state (local)
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mail-state-pv
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: local-mail-state
+  local:
+    path: /var/mail-state
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ .Values.EMAIL_NODE }}
+---
+# -----------------------------------------
+# 4.1. PersistentVolume for mail-log (local)
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mail-log-pv
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: local-mail-log
+  local:
+    path: /var/log/mail
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ .Values.EMAIL_NODE }}
+---
+# -----------------------------------------
+# StorageClasses for all four volumes
+# -----------------------------------------
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-mail-config
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-mail-data
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-mail-state
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-mail-log
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete

@@ -19,6 +19,8 @@ repositories:
     url: https://charts.jetstack.io
   - name: prometheus-community
     url: https://prometheus-community.github.io/helm-charts
+  - name: docker-mailserver
+    url: https://docker-mailserver.github.io/docker-mailserver-helm/
 ---
 # Cert-Manager Chart
 releases:
@@ -44,21 +46,25 @@ releases:
       - name: webhook.timeoutSeconds
         value: 10
 
+# Ingress Settings
+  - name: ingress
+    chart: ./ingress-cert
+    namespace: cert-manager
+    needs:
+      - cert-manager/cert-manager
+    values:
+      - values/{{ .Environment.Name }}.yaml
+    set:
+      - name: Environment
+        value: {{ .Environment.Name }}
+
 # Dummy Service
   - name: dummy-page
     namespace: default
     chart: ./dummy-page
-    values:
-      - values/{{ .Environment.Name }}.yaml
-      - namespace: default
-
-# Ingress Settings
-  - name: ingress
-    namespace: default
-    chart: ./ingress-cert
     needs:
       - cert-manager/cert-manager
-      - default/dummy-page
+      - cert-manager/ingress
     values:
       - values/{{ .Environment.Name }}.yaml
       - namespace: default
@@ -70,12 +76,20 @@ releases:
     values:
       - values/{{ .Environment.Name }}.yaml
 
+# Mail: persistent storage 
+  - name: mail-storage
+    namespace: mail
+    chart: ./mail-storage
+    values:
+      - values/{{ .Environment.Name }}.yaml
+
 # Prometheus stack
   - name: kube-prom-stack
     namespace: monitoring
     chart: prometheus-community/kube-prometheus-stack
     needs:
       - kube-system/kube-system
+      - mail/mail-storage
     version: "72.6.3"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
     # install crds
     # 
@@ -96,3 +110,21 @@ releases:
     set:
       - name: installCRDs
         value: false
+
+  # Mail Server
+  - name: mailserver
+    namespace: mail
+    chart: docker-mailserver/docker-mailserver
+    version: 4.2.1
+    # Traefik crds for ingress route for mail:
+    #
+    # curl -sSL https://raw.githubusercontent.com/traefik/traefik/v2.9/docs/content/reference/dynamic-configuration/kubernetes-crd-definition-v1.yml -o traefik-crds.yaml
+    # kubectl apply -f traefik-crds.yaml
+    # 
+    needs:
+      - cert-manager/cert-manager
+      - cert-manager/ingress
+      - mail/mail-storage
+    values:
+      - values/{{ .Environment.Name }}.yaml
+      - mail/values.yaml.gotmpl

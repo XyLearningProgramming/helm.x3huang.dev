@@ -43,7 +43,10 @@ jobs:
           KUBECONFIG: $HOME/.kube/config
 
       - name: Write secrets monitoring
-        run: echo "${{ secrets.SECRETS_MONITORING }}" > ./secrets/monitoring.env
+        run: echo '${{ secrets.SECRETS_MONITORING }}' > ./secrets/monitoring.env
+
+      - name: Write secrets mail
+        run: echo '${{ secrets.SECRETS_MAIL }}' > ./secrets/mail.cf
 
       - name: Apply secrets
         run: |

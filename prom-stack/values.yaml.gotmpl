@@ -22,10 +22,29 @@ kubeApiServer:
 kubelet:
   enabled: true
 
+# For node-exporter, default is good enough.
+# Ref: https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
+# 
+# # Enable node exporter to collect host metrics
+# prometheus-node-exporter:
+#   enabled: true
+#   # hostRootfs: true
+#   extraArgs:
+#     # - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+#     - --collector.systemd
+#     - --collector.processes
+#     - --collector.cpu
+#     - --collector.meminfo
+#     - --collector.netdev
+#     - --collector.loadavg
+#     # - --collector.diskstats
+#     # - --collector.filesystem
+#     - --no-collector.filesystem # it is usually more than enough.
+#     - --no-collector.diskstats
+
 prometheus:
   prometheusSpec:
-    # logLevel: {{ if eq .Environment.Name "prod" }}info{{ else }}debug{{ end }}
-    logLevel: debug # More log to tweak remote pressure
+    logLevel: {{ if eq .Environment.Name "prod" }}info{{ else }}debug{{ end }}
     scrapeInterval: 1m    # Global scrape interval
     maximumStartupDurationSeconds: 600  # Add this to fix the startup duration error
     retention: 3d         # Keep data for 5 days
@@ -48,10 +67,10 @@ prometheus:
         remoteTimeout: 3m
         basicAuth:
           username:
-            name: helmfile-secret
+            name: helmfile-secret-monitoring
             key: GRAFANA_CLOUD_USERNAME
           password:
-            name: helmfile-secret
+            name: helmfile-secret-monitoring
             key: GRAFANA_CLOUD_API_KEY
         queueConfig:
           batchSendDeadline: 5m          # Increased from 3m to allow more time for batches

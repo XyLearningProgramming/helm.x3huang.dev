@@ -1,0 +1,187 @@
+{{- /*
+  mail-storage/templates/ingress.yaml
+  Only the “proxy” ports are exposed via Traefik TCP IngressRouteTCP. 
+  - SMTP on port 25 → proxy port 12525
+  - SMTPS (submission on 465) → proxy port 10465
+  - Submission (STARTTLS on 587) → proxy port 10587
+  - IMAP on 143 → proxy port 10143
+  - IMAPS on 993 → proxy port 10993
+  We deliberately omit Rspamd (11334) and any non‐proxy ports.
+*/ -}}
+
+{{- $svc := .Values.service.name -}}
+{{- $ns  := .Values.namespace   -}}
+{{- $labels := include "mail-storage.labels" . | nindent 4 -}}
+
+---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for plain SMTP (port 25 via smtp-proxy=12525)                   │
+# └──────────────────────────────────────────────────────────────────────────┘
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "mail-storage.fullname" . }}-smtp-ingress
+  namespace: {{ $ns }}
+  labels:
+{{ $labels }}
+spec:
+  # This entryPoint must exist in your Traefik static config (e.g. ports.toml):
+  #   [entryPoints."{{ $ns }}-smtp"]
+  #     address = ":25"
+  entryPoints:
+    - {{ $ns }}-smtp
+  routes:
+    - match: ClientIP(`0.0.0.0/0`)
+      services:
+        - name: {{ $svc }}
+          port: 12525       # corresponds to smtp-proxy in your Service
+          # Ref: https://doc.traefik.io/traefik/routing/providers/kubernetes-crd/#kind-ingressroutetcp
+          # https://docker-mailserver.github.io/docker-mailserver/latest/examples/tutorials/mailserver-behind-proxy/
+          proxyProtocol:
+            version: 2
+  # Traefik configuration (tls: passthrough: true) is designed only for the implicit TLS model. It instructs Traefik to do nothing but wait for a TLS handshake (ClientHello packet) so it can sniff the SNI and pass the encrypted stream to the backend.
+  # tls:
+  #   passthrough: true
+
+---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for SMTPS (submission on port 465 via subs-proxy=10465)         │
+# └──────────────────────────────────────────────────────────────────────────┘
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "mail-storage.fullname" . }}-submissions-ingress
+  namespace: {{ $ns }}
+  labels:
+{{ $labels }}
+spec:
+  # Traefik entryPoint "mail-submissions" must be bound to port 465
+  entryPoints:
+    - mail-sbs    # Changed from {{ $ns }}-submissions
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: {{ $svc }}
+          port: 10465
+          proxyProtocol:
+            version: 2
+  tls:
+    passthrough: true
+
+---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for Submission (STARTTLS on port 587 → proxy 10587)             │
+# └──────────────────────────────────────────────────────────────────────────┘
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "mail-storage.fullname" . }}-submission-ingress
+  namespace: {{ $ns }}
+  labels:
+{{ $labels }}
+spec:
+  # Traefik entryPoint "mail-submission" must be bound to port 587
+  entryPoints:
+    - mail-sb    # Changed from {{ $ns }}-submission
+  routes:
+    - match: ClientIP(`0.0.0.0/0`)
+      services:
+        - name: {{ $svc }}
+          port: 10587
+          proxyProtocol:
+            version: 2
+
+---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for plain IMAP (port 143 → proxy 10143)                         │
+# └──────────────────────────────────────────────────────────────────────────┘
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "mail-storage.fullname" . }}-imap-ingress
+  namespace: {{ $ns }}
+  labels:
+{{ $labels }}
+spec:
+  # Traefik entryPoint “<namespace>-imap” must be bound to port 143
+  entryPoints:
+    - {{ $ns }}-imap
+  routes:
+    - match: ClientIP(`0.0.0.0/0`)
+      services:
+        - name: {{ $svc }}
+          port: 10143      # corresponds to imap-proxy in your Service
+          proxyProtocol:
+            version: 2
+
+---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for IMAPS (TLS on port 993 → proxy 10993)                       │
+# └──────────────────────────────────────────────────────────────────────────┘
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "mail-storage.fullname" . }}-imaps-ingress
+  namespace: {{ $ns }}
+  labels:
+{{ $labels }}
+spec:
+  # Traefik entryPoint “<namespace>-imaps” must be bound to port 993
+  entryPoints:
+    - {{ $ns }}-imaps
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: {{ $svc }}
+          port: 10993      # corresponds to imaps-proxy in your Service
+          proxyProtocol:
+            version: 2
+  tls:
+    passthrough: true
+---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for POP3 (plain on port 110 → proxy 10110)                      │
+# └──────────────────────────────────────────────────────────────────────────┘
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "mail-storage.fullname" . }}-pop3-ingress
+  namespace: {{ $ns }}
+  labels:
+{{ $labels }}
+spec:
+  # Traefik entryPoint "mail-pop3" must be bound to port 110
+  entryPoints:
+    - mail-pop3
+  routes:
+    - match: ClientIP(`0.0.0.0/0`)
+      services:
+        - name: {{ $svc }}
+          port: 10110      # corresponds to pop3-proxy in your Service
+          proxyProtocol:
+            version: 2
+
+---
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ Ingress for POP3S (TLS on port 995 → proxy 10995)                       │
+# └──────────────────────────────────────────────────────────────────────────┘
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "mail-storage.fullname" . }}-pop3s-ingress
+  namespace: {{ $ns }}
+  labels:
+{{ $labels }}
+spec:
+  # Traefik entryPoint "mail-pop3s" must be bound to port 995
+  entryPoints:
+    - mail-pop3s
+  routes:
+    - match: HostSNI(`*`)
+      services:
+        - name: {{ $svc }}
+          port: 10995      # corresponds to pop3s-proxy in your Service
+          proxyProtocol:
+            version: 2
+  tls:
+    passthrough: true

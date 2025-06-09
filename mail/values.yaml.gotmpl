@@ -1,0 +1,107 @@
+# Name of the TLS secret created by cert-manager via ingress 
+# in ingress-cert/templates/ingress.yaml
+certificate: "mail-{{ .Values.DOMAIN }}-tls"
+
+deployment:
+  nodeSelector:
+    kubernetes.io/hostname: {{ .Values.EMAIL_NODE }}
+  # Initialize mail configuration using initContainer
+  initContainers:
+    - name: setup-mail-config
+      image: busybox
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          # Copy account configuration - ensure clean state
+          rm -f /tmp/docker-mailserver/postfix-accounts.cf
+          cp /mail-secret/mail.cf /tmp/docker-mailserver/postfix-accounts.cf
+          chmod 0600 /tmp/docker-mailserver/postfix-accounts.cf
+          
+          # Create alias configuration - ensure clean state
+          rm -f /tmp/docker-mailserver/postfix-virtual.cf
+          cat > /tmp/docker-mailserver/postfix-virtual.cf << 'EOF'
+          # Mail aliases
+          admin@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+          postmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+          abuse@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+          hostmaster@{{ .Values.DOMAIN }} info@{{ .Values.DOMAIN }}
+          EOF
+          chmod 0600 /tmp/docker-mailserver/postfix-virtual.cf
+      volumeMounts:
+        - name: mail-config
+          mountPath: /tmp/docker-mailserver
+        - name: mail-secret
+          mountPath: /mail-secret
+          readOnly: true
+  
+  # Add the secret volume for mail accounts
+  extraVolumes:
+    - name: mail-secret
+      secret:
+        secretName: helmfile-secret-mail
+        items:
+          - key: mail.cf
+            path: mail.cf
+        defaultMode: 0600
+
+  env:
+    OVERRIDE_HOSTNAME: "mail.{{ .Values.DOMAIN }}"
+    POSTMASTER_ADDRESS: "postmaster@{{ .Values.DOMAIN }}"
+    LOG_LEVEL: "info"
+    ENABLE_UPDATE_CHECK: "1"
+    UPDATE_CHECK_INTERVAL: "1d"
+    PERMIT_DOCKER: "none"
+    ENABLE_IMAP: "1"
+    ENABLE_POP3: "1"
+    ENABLE_RSPAMD: "1"
+    ENABLE_RSPAMD_REDIS: "1"
+    RSPAMD_HFILTER: "1"
+    RSPAMD_HFILTER_HOSTNAME_UNKNOWN_SCORE: "6"
+    POSTSCREEN_ACTION: "enforce"
+    ENABLE_QUOTAS: "1"
+    LOGROTATE_COUNT: "4"
+    LOGROTATE_INTERVAL: "weekly"
+    POSTFIX_INET_PROTOCOLS: "all"
+    DOVECOT_INET_PROTOCOLS: "all"
+    SPAMASSASSIN_SPAM_TO_INBOX: "1"
+    MOVE_SPAM_TO_JUNK: "1"
+    SRS_SENDER_CLASSES: "envelope_sender"
+    RELAY_PORT: "25"
+    DOVECOT_MAILBOX_FORMAT: "maildir"
+    POSTGREY_DELAY: "300"
+    POSTGREY_MAX_AGE: "35"
+    POSTGREY_TEXT: "Delayed by Postgrey"
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "64Mi"
+    limits:
+      cpu: "750m"
+      memory: "512Mi"
+
+persistent_volume_claims:
+  mail-config:
+    enabled: true
+    size: "1Mi"
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-mail-config"
+  mail-data:
+    enabled: true
+    size: "10Gi"
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-mail-data"
+  mail-state:
+    enabled: true
+    size: "1Gi"
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-mail-state"
+  mail-log:
+    enabled: true
+    size: "1Gi"
+    accessModes:
+      - ReadWriteOnce
+    storageClass: "local-mail-log"
