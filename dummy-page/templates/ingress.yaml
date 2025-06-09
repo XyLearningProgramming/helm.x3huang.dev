@@ -1,46 +1,27 @@
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
   name: {{ .Release.Name }}-ingress
   namespace: {{ .Values.namespace }}
   labels:
     {{- include "dummy-page.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    cert-manager.io/cluster-issuer: {{ .Values.ISSUER_NAME }}
 spec:
-  entryPoints:
-    - web
-    - websecure
-  routes:
-    - match: Host(`{{ .Values.DOMAIN }}`) && PathPrefix(`{{ .Values.ingress.path }}`)
-      kind: Rule
-      services:
-        - name: {{ include "dummy-page.fullname" . }}
-          port: {{ .Values.service.port }}
+  ingressClassName: "traefik"
   tls:
-    certResolver: {{ .Values.ISSUER_NAME }}
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: {{ .Release.Name }}-ingress
-#   namespace: {{ .Values.namespace }}
-#   labels:
-#     {{- include "dummy-page.labels" . | nindent 4 }}
-#   annotations:
-#     kubernetes.io/ingress.class: "traefik"
-#     cert-manager.io/cluster-issuer: {{ .Values.ISSUER_NAME }}
-# spec:
-#   ingressClassName: "traefik"
-#   tls:
-#     - hosts:
-#         - {{ .Values.DOMAIN }}
-#       secretName: {{ .Values.DOMAIN }}-tls
-#   rules:
-#     - host: {{ .Values.DOMAIN }}
-#       http:
-#         paths:
-#           - path: {{ .Values.ingress.path }}
-#             pathType: {{ .Values.ingress.pathType }}
-#             backend:
-#               service:
-#                 name: {{ include "dummy-page.fullname" . }}
-#                 port:
-#                   number: {{ .Values.service.port }}
+    - hosts:
+        - {{ .Values.DOMAIN }}
+      secretName: {{ .Values.DOMAIN }}-tls
+  rules:
+    - host: {{ .Values.DOMAIN }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.path }}
+            pathType: {{ .Values.ingress.pathType }}
+            backend:
+              service:
+                name: {{ include "dummy-page.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}

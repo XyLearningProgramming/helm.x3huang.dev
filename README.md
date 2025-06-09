@@ -52,90 +52,108 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
-    ########################################
-    ## 1) METRICS (Prometheus) ENTRYPOINT ##
-    ########################################
+    additionalArguments:
+    - "--log.level=DEBUG"
+    - "--accesslog=true"
 
-    # Enable Prometheus metrics in Traefik and bind its entryPoint to :8082
+    ########################################
+    ## 1) METRICS (Prometheus)             ##
+    ########################################
     metrics:
       prometheus:
         enabled: true
-        # This tells Traefik which entryPoint to use for Prometheus metrics
-        entryPoint: metrics
 
-    ################################################################
-    ## 2) ADDITIONAL ARGUMENTS (all entryPoints listed below)    ##
-    ################################################################
+    ########################################
+    ## 2) ENTRYPOINT DEFINITIONS           ##
+    ########################################
+    # Define only the actual mail entryPoints.  Proxy ports are resolved later by IngressRouteTCP.
+    entryPoints:
+      mail-smtp:
+        address: ":25"
+        proxyProtocol:
+          trustedIPs:
+            - "0.0.0.0/0"
+      mail-sb:
+        address: ":587"
+        proxyProtocol:
+          trustedIPs:
+            - "0.0.0.0/0"
+      mail-sbs:
+        address: ":465"
+        proxyProtocol:
+          trustedIPs:
+            - "0.0.0.0/0"
+      mail-imap:
+        address: ":143"
+        proxyProtocol:
+          trustedIPs:
+            - "0.0.0.0/0"
+      mail-imaps:
+        address: ":993"
+        proxyProtocol:
+          trustedIPs:
+            - "0.0.0.0/0"
+      mail-pop3:
+        address: ":110"
+        proxyProtocol:
+          trustedIPs:
+            - "0.0.0.0/0"
+      mail-pop3s:
+        address: ":995"
+        proxyProtocol:
+          trustedIPs:
+            - "0.0.0.0/0"
 
-    # Each "--entryPoints.<name>.address=:<port>" line ​binds Traefik’s pod to that port.
-    # We also pass proxyProtocol.trustedIPs so Docker-Mailserver sees the real client IP.
-    additionalArguments:
-      # Metrics entryPoint is still commented out:
-      # - "--entryPoints.metrics.address=:9100"
-
-      # ─── MAIL ENTRYPOINTS (original ports) ─────────────────────────────
-      # - "--entryPoints.mail-smtp.address=:25"
-      - "--entryPoints.mail-smtp.proxyProtocol.trustedIPs=0.0.0.0/0"
-
-      # - "--entryPoints.mail-submission.address=:587"
-      - "--entryPoints.mail-submission.proxyProtocol.trustedIPs=0.0.0.0/0"
-
-      # - "--entryPoints.mail-imaps.address=:993"
-      - "--entryPoints.mail-imaps.proxyProtocol.trustedIPs=0.0.0.0/0"
-
-      # - "--entryPoints.mail-pop3s.address=:995"
-      - "--entryPoints.mail-pop3s.proxyProtocol.trustedIPs=0.0.0.0/0"
-
-    ############################################################
-    ## 3) EXPOSED PORTS (map each entryPoint → external port) ##
-    ############################################################
-
-    # Under "ports:" we declare which ports Traefik’s Service object should open on each Node,
-    # and how they map back to the containerPort (the same value here).
+    ########################################
+    ## 3) EXPOSED PORTS                    ##
+    ########################################
+    # Map only the original mail ports.  IngressRouteTCP will bind proxy ports internally.
     ports:
-      # # ─── METRICS PORT ───────────────────────────────────────────────
-      # metrics:
-      #   port: 9100
-      #   expose:
-      #     default: true
-      #   exposedPort: 9100
-      #   protocol: TCP
-
-      # ─── MAIL: SMTP (listen on :25, forward internally to proxy-port 12525) ─┐
       mail-smtp:
         port: 25
         expose:
           default: true
         exposedPort: 25
         protocol: TCP
-      # ────────────────────────────────────────────────────────────────────────┘
 
-      # ─── MAIL: Submission (listen on :587 → forward internally to proxy-port 10587) ─┐
-      mail-submission:
+      mail-sb:
         port: 587
         expose:
           default: true
         exposedPort: 587
         protocol: TCP
-      # ────────────────────────────────────────────────────────────────────────────────┘
+      mail-sbs:
+        port: 465
+        expose:
+          default: true
+        exposedPort: 465
+        protocol: TCP
 
-      # ─── MAIL: IMAPS (listen on :993 → forward internally to proxy-port 10993) ─┐
+      mail-imap:
+        port: 143
+        expose:
+          default: true
+        exposedPort: 143
+        protocol: TCP
       mail-imaps:
         port: 993
         expose:
           default: true
         exposedPort: 993
         protocol: TCP
-      # ──────────────────────────────────────────────────────────────────────────────┘
 
-      # ─── MAIL: POP3S (listen on :995 → forward internally to proxy-port 10995) ─┐
+      mail-pop3:
+        port: 110
+        expose:
+          default: true
+        exposedPort: 110
+        protocol: TCP
       mail-pop3s:
         port: 995
         expose:
           default: true
         exposedPort: 995
         protocol: TCP
-      # ─────────────────────────────────────────────────────────────────────────────┘
 
 ```
 
