@@ -1,7 +1,7 @@
 # values.yaml for grafana/helm-charts loki-stack
 
 # -------------------------------------------------------------------
-# Disable every component except loki + promtail
+# Disable every component except promtail
 # -------------------------------------------------------------------
 test_pod:
   enabled: false
@@ -22,7 +22,7 @@ prometheus:
   enabled: false
 
 # -------------------------------------------------------------------
-# Local Loki (monolithic) server
+# Local Loki (monolithic) server - disabled for now
 # -------------------------------------------------------------------
 loki:
   enabled: false
