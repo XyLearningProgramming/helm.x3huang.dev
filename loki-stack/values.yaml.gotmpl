@@ -1,7 +1,7 @@
 # values.yaml for grafana/helm-charts loki-stack
 
 # -------------------------------------------------------------------
-# Disable every component except loki + promtail
+# Disable every component except promtail
 # -------------------------------------------------------------------
 test_pod:
   enabled: false
@@ -22,7 +22,7 @@ prometheus:
   enabled: false
 
 # -------------------------------------------------------------------
-# Local Loki (monolithic) server
+# Local Loki (monolithic) server - disabled for now
 # -------------------------------------------------------------------
 loki:
   enabled: false
@@ -89,7 +89,7 @@ promtail:
       readOnly: true
 
   config:
-    logLevel: {{ if eq .Environment.Name "prod" }}info{{ else }}debug{{ end }}
+    logLevel: {{ if eq .Environment.Name "prod" }}info{{ else }}error{{ end }}
     # serverPort: 3101
 
     # Push directly into Grafana Cloud Loki with basic_auth.
