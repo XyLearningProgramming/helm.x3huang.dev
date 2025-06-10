@@ -89,7 +89,7 @@ promtail:
       readOnly: true
 
   config:
-    logLevel: {{ if eq .Environment.Name "prod" }}info{{ else }}debug{{ end }}
+    logLevel: {{ if eq .Environment.Name "prod" }}info{{ else }}error{{ end }}
     # serverPort: 3101
 
     # Push directly into Grafana Cloud Loki with basic_auth.
