@@ -123,5 +123,3 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
-namespace: mail

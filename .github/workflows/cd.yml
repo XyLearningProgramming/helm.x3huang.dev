@@ -48,6 +48,12 @@ jobs:
       - name: Write secrets mail
         run: echo '${{ secrets.SECRETS_MAIL }}' > ./secrets/mail.cf
 
+      - name: Write secrets mail dkim rsa public
+        run: echo '${{ secrets.SECRETS_MAIL_RSA_PUBLIC }}' > ./secrets/mail.rsa.public.txt
+
+      - name: Write secrets mail dkim rsa private
+        run: echo '${{ secrets.SECRETS_MAIL_RSA_PRIVATE }}' > ./secrets/mail.rsa.private.txt
+
       - name: Apply secrets
         run: |
           ./scripts/apply-secrets.sh

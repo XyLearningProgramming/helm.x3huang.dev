@@ -105,3 +105,22 @@ persistent_volume_claims:
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-log"
+
+
+secrets:
+  # Private key for x3huang.dev, coming from an existing Secret
+  helmfile-secret-mail:
+    # the name of the k8s Secret you’ve pre-created
+    name: helmfile-secret-mail
+    # don’t try to create it—use what’s already there
+    create: false
+    key: mail.rsa.private.txt
+    path: /tmp/docker-mailserver/rspamd/dkim/rsa-2048-mail-{{ .Values.DOMAIN }}.private.txt
+
+
+  # Public key for x3huang.dev, coming from the same Secret
+  helmfile-secret-mail:
+    name: helmfile-secret-mail
+    create: false
+    key: mail.rsa.public.txt
+    path: /tmp/docker-mailserver/rspamd/dkim/rsa-2048-mail-{{ .Values.DOMAIN }}.public.txt
