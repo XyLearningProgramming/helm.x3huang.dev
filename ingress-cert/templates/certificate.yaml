@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.DOMAIN }}-tls
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    replicator.v1.mittwald.de/replication-allowed: "true"
+    replicator.v1.mittwald.de/replication-allowed-namespaces: ".*"
+spec:
+  secretName: {{ .Values.DOMAIN }}-tls
+  dnsNames:
+    - {{ .Values.DOMAIN }}
+    - mail.{{ .Values.DOMAIN }}
+    - smtp.{{ .Values.DOMAIN }}
+    - imap.{{ .Values.DOMAIN }}
+  issuerRef:
+    name: {{ .Values.ISSUER_NAME }}
+    kind: ClusterIssuer

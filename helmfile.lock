@@ -12,5 +12,8 @@ dependencies:
 - name: loki-stack
   repository: https://grafana.github.io/helm-charts
   version: 2.10.2
-digest: sha256:481825068f21f24203abe4de19da63c64f60bbc545e49b027701f393892a5111
-generated: '2025-06-09T22:19:25.017639443+08:00'
+- name: traefik
+  repository: https://traefik.github.io/charts
+  version: 36.0.0
+digest: sha256:111728030f8f8b0b93c3b36fe0bf10a11f6dc4ff10ba3fb987f7820b70558911
+generated: '2025-06-10T21:40:00.547429185+08:00'

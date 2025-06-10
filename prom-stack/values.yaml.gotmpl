@@ -91,8 +91,8 @@ prometheus:
           # - sourceLabels: [job]  # Fix: source_labels -> sourceLabels
           #   regex: '^kubelet$'
           #   action: drop
-    additionalScrapeConfigs: |
-      - job_name: traefik
-        metrics_path: /metrics
-        static_configs:
-          - targets: ["traefik-metrics-service.kube-system.svc:9100"]
+    # additionalScrapeConfigs: |
+    #   - job_name: traefik
+    #     metrics_path: /metrics
+    #     static_configs:
+    #       - targets: ["traefik-metrics-service.kube-system.svc:9100"]
