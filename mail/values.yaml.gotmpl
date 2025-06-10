@@ -17,6 +17,13 @@ deployment:
           cp /mail-secret/mail.cf /tmp/docker-mailserver/postfix-accounts.cf
           chmod 0600 /tmp/docker-mailserver/postfix-accounts.cf
           
+          # Copy rsa key configuration - ensure clean state
+          mkdir -p /tmp/docker-mailserver/rspamd/dkim
+          rm -f /tmp/docker-mailserver/rspamd/dkim/rsa-2048-mail-{{ .Values.DOMAIN }}.private.txt
+          rm -f /tmp/docker-mailserver/rspamd/dkim/rsa-2048-mail-{{ .Values.DOMAIN }}.public.txt
+          cp /mail-rsa-public-txt/mail.rsa.public.txt /tmp/docker-mailserver/rspamd/dkim/rsa-2048-mail-{{ .Values.DOMAIN }}.public.txt
+          cp /mail-rsa-private-txt/mail.rsa.private.txt /tmp/docker-mailserver/rspamd/dkim/rsa-2048-mail-{{ .Values.DOMAIN }}.private.txt
+
           # Create alias configuration - ensure clean state
           rm -f /tmp/docker-mailserver/postfix-virtual.cf
           cat > /tmp/docker-mailserver/postfix-virtual.cf << 'EOF'
@@ -33,6 +40,12 @@ deployment:
         - name: mail-secret
           mountPath: /mail-secret
           readOnly: true
+        - name: mail-rsa-public-txt
+          mountPath: /mail-rsa-public-txt
+          readOnly: true
+        - name: mail-rsa-private-txt
+          mountPath: /mail-rsa-private-txt
+          readOnly: true
   
   # Add the secret volume for mail accounts
   extraVolumes:
@@ -42,6 +55,20 @@ deployment:
         items:
           - key: mail.cf
             path: mail.cf
+        defaultMode: 0600
+    - name: mail-rsa-public-txt
+      secret:
+        secretName: helmfile-secret-mail
+        items:
+          - key: mail.rsa.public.txt
+            path: mail.rsa.public.txt
+        defaultMode: 0600
+    - name: mail-rsa-private-txt
+      secret:
+        secretName: helmfile-secret-mail
+        items:
+          - key: mail.rsa.private.txt
+            path: mail.rsa.private.txt
         defaultMode: 0600
 
   env:
@@ -105,22 +132,3 @@ persistent_volume_claims:
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-log"
-
-
-secrets:
-  # Private key for x3huang.dev, coming from an existing Secret
-  helmfile-secret-mail:
-    # the name of the k8s Secret you’ve pre-created
-    name: helmfile-secret-mail
-    # don’t try to create it—use what’s already there
-    create: false
-    key: mail.rsa.private.txt
-    path: /tmp/docker-mailserver/rspamd/dkim/rsa-2048-mail-{{ .Values.DOMAIN }}.private.txt
-
-
-  # Public key for x3huang.dev, coming from the same Secret
-  helmfile-secret-mail:
-    name: helmfile-secret-mail
-    create: false
-    key: mail.rsa.public.txt
-    path: /tmp/docker-mailserver/rspamd/dkim/rsa-2048-mail-{{ .Values.DOMAIN }}.public.txt
