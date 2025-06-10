@@ -1,0 +1,125 @@
+# values.yaml for grafana/helm-charts loki-stack
+
+# -------------------------------------------------------------------
+# Disable every component except promtail
+# -------------------------------------------------------------------
+test_pod:
+  enabled: false
+
+fluent-bit:
+  enabled: false
+
+filebeat:
+  enabled: false
+
+logstash:
+  enabled: false
+
+grafana:
+  enabled: false
+
+prometheus:
+  enabled: false
+
+# -------------------------------------------------------------------
+# Local Loki (monolithic) server - disabled for now
+# -------------------------------------------------------------------
+loki:
+  enabled: false
+  # isDefault: true
+
+  # # Tune CPU/memory requests & limits for production use.
+  # # Supported by the underlying loki chart :contentReference[oaicite:1]{index=1}.
+  # resources:
+  #   requests:
+  #     cpu: "50m"
+  #     memory: "64Mi"
+  #   limits:
+  #     cpu: "500m"
+  #     memory: "512Mi"
+
+  # # (Optional) Enable persistence so your logs survive pod restarts
+  # persistence:
+  #   enabled: true
+  #   size: 5Gi
+
+  # # Health probes (inherited from the default loki-stack values)
+  # readinessProbe:
+  #   httpGet:
+  #     path: /ready
+  #     port: http-metrics
+  #   initialDelaySeconds: 45
+  # livenessProbe:
+  #   httpGet:
+  #     path: /ready
+  #     port: http-metrics
+  #   initialDelaySeconds: 45
+
+  # datasource:
+  #   jsonData: "{}"
+  #   uid: "local-loki"
+
+# -------------------------------------------------------------------
+# Promtail – only agent to ship container logs out
+# -------------------------------------------------------------------
+promtail:
+  enabled: true
+
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+  # Mount your existing Secret into the Promtail pod
+  extraVolumes:
+    - name: loki-creds
+      secret:
+        secretName: helmfile-secret-monitoring
+        items:
+          - key: GRAFANA_CLOUD_LOKI_API_KEY
+            path: GRAFANA_CLOUD_LOKI_API_KEY
+        defaultMode: 0600
+
+  extraVolumeMounts:
+    - name: loki-creds
+      mountPath: /etc/grafana-creds
+      readOnly: true
+
+  config:
+    logLevel: {{ if eq .Environment.Name "prod" }}info{{ else }}error{{ end }}
+    # serverPort: 3101
+
+    # Push directly into Grafana Cloud Loki with basic_auth.
+    # Promtail supports full client config here (even though helm-chart's
+    # values clients only expose `url` by default) :contentReference[oaicite:2]{index=2}.
+    clients:
+      - url: https://logs-prod-us-central1.grafana.net/loki/api/v1/push
+        basic_auth:
+          username: 1205778
+          # this path comes from the extraVolumeMounts above
+          password_file: /etc/grafana-creds/GRAFANA_CLOUD_LOKI_API_KEY
+
+    # # Keep track of where we left off
+    # positions:
+    #   filename: /run/promtail/positions.yaml
+
+    # # Scrape all container logs
+    # scrape_configs:
+    #   - job_name: kubernetes-pods
+    #     static_configs:
+    #       - targets:
+    #           - localhost
+    #         labels:
+    #           job: kubernetes-pods
+    #           __path__: /var/log/containers/*.log
+
+# # -------------------------------------------------------------------
+# # Proxy settings (if needed for egress)
+# # -------------------------------------------------------------------
+# proxy:
+#   http_proxy: ""
+#   https_proxy: ""
+#   no_proxy: ""

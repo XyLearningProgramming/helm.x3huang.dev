@@ -21,6 +21,8 @@ repositories:
     url: https://prometheus-community.github.io/helm-charts
   - name: docker-mailserver
     url: https://docker-mailserver.github.io/docker-mailserver-helm/
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
 ---
 # Cert-Manager Chart
 releases:
@@ -89,7 +91,6 @@ releases:
     chart: prometheus-community/kube-prometheus-stack
     needs:
       - kube-system/kube-system
-      - mail/mail-storage
     version: "72.6.3"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
     # install crds
     # 
@@ -111,7 +112,7 @@ releases:
       - name: installCRDs
         value: false
 
-  # Mail Server
+# Mail Server
   - name: mailserver
     namespace: mail
     chart: docker-mailserver/docker-mailserver
@@ -128,3 +129,14 @@ releases:
     values:
       - values/{{ .Environment.Name }}.yaml
       - mail/values.yaml.gotmpl
+
+# Loki stack
+  - name: loki-stack
+    namespace: monitoring
+    chart: grafana/loki-stack
+    needs:
+      - kube-system/kube-system
+    version: "2.10.2"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
+    values:
+      - values/{{ .Environment.Name }}.yaml
+      - loki-stack/values.yaml.gotmpl
