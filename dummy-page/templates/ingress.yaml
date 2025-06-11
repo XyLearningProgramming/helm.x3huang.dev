@@ -7,7 +7,6 @@ metadata:
     {{- include "dummy-page.labels" . | nindent 4 }}
   annotations:
     kubernetes.io/ingress.class: "traefik"
-    cert-manager.io/cluster-issuer: {{ .Values.ISSUER_NAME }}
 spec:
   ingressClassName: "traefik"
   tls:

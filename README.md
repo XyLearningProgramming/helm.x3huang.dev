@@ -40,121 +40,13 @@ Server Version: v1.32.4+k3s1
 2. Change `./values` if domain name changes.
 3. Add files in `./secrets` as secrets in workflow.
 4. Run `sudo mount --make-shared /` so that prom. node exporter container can start successfully.
-5. Traefik config is managed by k3s since I do not install another one. So... ALL entrypoints are configured in `/var/lib/rancher/k3s/server/manifests/traefik-config.yaml` inside the main host.
+5. Traefik config is managed by k3s. So... remove traefik in k3s installed by default.
 
-```yaml
-# /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
----
-apiVersion: helm.cattle.io/v1
-kind: HelmChartConfig
-metadata:
-  name: traefik       # must exactly match the HelmChart name
-  namespace: kube-system
-spec:
-  valuesContent: |-
-    additionalArguments:
-    - "--log.level=DEBUG"
-    - "--accesslog=true"
-
-    ########################################
-    ## 1) METRICS (Prometheus)             ##
-    ########################################
-    metrics:
-      prometheus:
-        enabled: true
-
-    ########################################
-    ## 2) ENTRYPOINT DEFINITIONS           ##
-    ########################################
-    # Define only the actual mail entryPoints.  Proxy ports are resolved later by IngressRouteTCP.
-    entryPoints:
-      mail-smtp:
-        address: ":25"
-        proxyProtocol:
-          trustedIPs:
-            - "0.0.0.0/0"
-      mail-sb:
-        address: ":587"
-        proxyProtocol:
-          trustedIPs:
-            - "0.0.0.0/0"
-      mail-sbs:
-        address: ":465"
-        proxyProtocol:
-          trustedIPs:
-            - "0.0.0.0/0"
-      mail-imap:
-        address: ":143"
-        proxyProtocol:
-          trustedIPs:
-            - "0.0.0.0/0"
-      mail-imaps:
-        address: ":993"
-        proxyProtocol:
-          trustedIPs:
-            - "0.0.0.0/0"
-      mail-pop3:
-        address: ":110"
-        proxyProtocol:
-          trustedIPs:
-            - "0.0.0.0/0"
-      mail-pop3s:
-        address: ":995"
-        proxyProtocol:
-          trustedIPs:
-            - "0.0.0.0/0"
-
-    ########################################
-    ## 3) EXPOSED PORTS                    ##
-    ########################################
-    # Map only the original mail ports.  IngressRouteTCP will bind proxy ports internally.
-    ports:
-      mail-smtp:
-        port: 25
-        expose:
-          default: true
-        exposedPort: 25
-        protocol: TCP
-
-      mail-sb:
-        port: 587
-        expose:
-          default: true
-        exposedPort: 587
-        protocol: TCP
-      mail-sbs:
-        port: 465
-        expose:
-          default: true
-        exposedPort: 465
-        protocol: TCP
-
-      mail-imap:
-        port: 143
-        expose:
-          default: true
-        exposedPort: 143
-        protocol: TCP
-      mail-imaps:
-        port: 993
-        expose:
-          default: true
-        exposedPort: 993
-        protocol: TCP
-
-      mail-pop3:
-        port: 110
-        expose:
-          default: true
-        exposedPort: 110
-        protocol: TCP
-      mail-pop3s:
-        port: 995
-        expose:
-          default: true
-        exposedPort: 995
-        protocol: TCP
-
+```bash
+# Ref: https://qdnqn.com/k3s-remove-traefik/
+sudo rm -rf /var/lib/rancher/k3s/server/manifests/traefik.yaml
+helm uninstall traefik traefik-crd -n kube-system
+sudo systemctl restart k3s
 ```
 
 6. Run these commands to make sure pv path exists (for mail deployment)
@@ -164,6 +56,31 @@ mkdir -p /var/log/mail
 mkdir -p /var/mail-state
 mkdir -p /var/mail
 mkdir -p /tmp/docker-mailserver
+```
+
+7. Default coredns have these error logs without custom configs, comment out these lines to avoid them from being emitted.
+
+Ref: https://github.com/k3s-io/k3s/issues/7639#issuecomment-1592172869
+
+```log
+[WARNING] No files matching import glob pattern: /etc/coredns/custom/*.override 
+[WARNING] No files matching import glob pattern: /etc/coredns/custom/*.server 
+```
+
+```yaml
+# /var/lib/rancher/k3s/server/manifests/coredns.yaml
+data:
+  Corefile: |
+    .:53 {
+        # ...
+        # import /etc/coredns/custom/*.override
+    }
+    # import /etc/coredns/custom/*.server
+```
+
+```bash
+sudo vim /var/lib/rancher/k3s/server/manifests/coredns.yaml
+kubectl rollout restart deployment coredns -n kube-system
 ```
 
 ## Helpers

@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: {{ include "dummy-page.fullname" . }}
   namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ include "dummy-page.fullname" . }}
 spec:
   type: {{ .Values.service.type }}
   selector:

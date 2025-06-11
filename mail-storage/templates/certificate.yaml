@@ -1,14 +1,33 @@
-apiVersion: cert-manager.io/v1
-kind: Certificate
+# Certificate copied from cert-manager to avoid duplicate requests to acme server.
+# Ref: https://github.com/mittwald/kubernetes-replicator
+apiVersion: v1
+kind: Secret
 metadata:
   name: mail-{{ .Values.DOMAIN }}-tls
   namespace: {{ .Release.Namespace }}
-spec:
-  secretName: mail-{{ .Values.DOMAIN }}-tls
-  dnsNames:
-    - mail.{{ .Values.DOMAIN }}
-    - smtp.{{ .Values.DOMAIN }}
-    - imap.{{ .Values.DOMAIN }}
-  issuerRef:
-    name: {{ .Values.ISSUER_NAME }}
-    kind: ClusterIssuer
+  annotations:
+    replicator.v1.mittwald.de/replicate-from: cert-manager/{{ .Values.DOMAIN }}-tls
+  labels:
+    {{- include "mail-storage.labels" . | nindent 4 }}
+type: kubernetes.io/tls
+data:
+  tls.key: ""
+  tls.crt: ""
+  ca.crt: ""
+
+# # Deprecated:
+# 
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: mail-{{ .Values.DOMAIN }}-tls
+#   namespace: {{ .Release.Namespace }}
+# spec:
+#   secretName: mail-{{ .Values.DOMAIN }}-tls
+#   dnsNames:
+#     - mail.{{ .Values.DOMAIN }}
+#     - smtp.{{ .Values.DOMAIN }}
+#     - imap.{{ .Values.DOMAIN }}
+#   issuerRef:
+#     name: {{ .Values.ISSUER_NAME }}
+#     kind: ClusterIssuer

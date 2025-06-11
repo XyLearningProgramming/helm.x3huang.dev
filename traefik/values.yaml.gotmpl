@@ -1,0 +1,140 @@
+
+# deployment:
+  # Use ServiceMonitor instead
+  #
+  # podAnnotations:
+  #   prometheus.io/port: "8082"
+  #   prometheus.io/scrape: "true"
+
+priorityClassName: "system-cluster-critical"
+
+image:
+  repository: "rancher/mirrored-library-traefik"
+  tag: "3.3.6"
+
+tolerations:
+  - key: "CriticalAddonsOnly"
+    operator: "Exists"
+  - key: "node-role.kubernetes.io/control-plane"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+service:
+  ipFamilyPolicy: "PreferDualStack"
+
+additionalArguments:
+  - "--log.level=DEBUG"
+  - "--accesslog=true"
+
+########################################
+## 1) METRICS (Prometheus)             ##
+########################################
+metrics:
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true              # Enable ServiceMonitor resource
+      interval: "1m"           # Scrape interval
+    service:
+      enabled: true
+
+########################################
+## 2) ENTRYPOINT DEFINITIONS           ##
+########################################
+# Define only the actual mail entryPoints.  Proxy ports are resolved later by IngressRouteTCP.
+entryPoints:
+  mail-smtp:
+    address: ":25"
+    proxyProtocol:
+      trustedIPs:
+        - "0.0.0.0/0"
+  mail-sb:
+    address: ":587"
+    proxyProtocol:
+      trustedIPs:
+        - "0.0.0.0/0"
+  mail-sbs:
+    address: ":465"
+    proxyProtocol:
+      trustedIPs:
+        - "0.0.0.0/0"
+  mail-imap:
+    address: ":143"
+    proxyProtocol:
+      trustedIPs:
+        - "0.0.0.0/0"
+  mail-imaps:
+    address: ":993"
+    proxyProtocol:
+      trustedIPs:
+        - "0.0.0.0/0"
+  mail-pop3:
+    address: ":110"
+    proxyProtocol:
+      trustedIPs:
+        - "0.0.0.0/0"
+  mail-pop3s:
+    address: ":995"
+    proxyProtocol:
+      trustedIPs:
+        - "0.0.0.0/0"
+
+########################################
+## 3) EXPOSED PORTS                    ##
+########################################
+# Map only the original mail ports.  IngressRouteTCP will bind proxy ports internally.
+ports:
+  mail-smtp:
+    port: 25
+    expose:
+      default: true
+    exposedPort: 25
+    protocol: TCP
+
+  mail-sb:
+    port: 587
+    expose:
+      default: true
+    exposedPort: 587
+    protocol: TCP
+  mail-sbs:
+    port: 465
+    expose:
+      default: true
+    exposedPort: 465
+    protocol: TCP
+
+  mail-imap:
+    port: 143
+    expose:
+      default: true
+    exposedPort: 143
+    protocol: TCP
+  mail-imaps:
+    port: 993
+    expose:
+      default: true
+    exposedPort: 993
+    protocol: TCP
+
+  mail-pop3:
+    port: 110
+    expose:
+      default: true
+    exposedPort: 110
+    protocol: TCP
+  mail-pop3s:
+    port: 995
+    expose:
+      default: true
+    exposedPort: 995
+    protocol: TCP
+
+# Enable/create an IngressClass named "traefik" so that Ingress resources with class "traefik" are picked up
+ingressClass:
+  enabled: true       # create an IngressClass resource
+  isDefaultClass: true
+  name: traefik         # the class name; matches ClusterIssuer solver’s ingress.class

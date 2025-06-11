@@ -23,13 +23,45 @@ repositories:
     url: https://docker-mailserver.github.io/docker-mailserver-helm/
   - name: grafana
     url: https://grafana.github.io/helm-charts
+  - name: traefik
+    url: https://traefik.github.io/charts
+  - name: mittwald
+    url: https://helm.mittwald.de
 ---
-# Cert-Manager Chart
 releases:
+# Traefik: replace the default k3s traefik with explicit config
+  - name: traefik
+    namespace: kube-system
+    chart: traefik/traefik
+    version: 36.0.0
+    # Traefik crds ref: https://github.com/traefik/traefik-helm-chart
+    #
+    # helm install traefik-crds traefik/traefik-crds
+    values:
+      - values/{{ .Environment.Name }}.yaml
+      - traefik/values.yaml.gotmpl
+
+# Replicator: copy tls secrets to different ns
+  - name: kubernetes-replicator
+    namespace: kube-system                # where you want the controller to live
+    chart: mittwald/kubernetes-replicator
+    version: "2.5.1"                      # pin to a specific chart version if you like
+    values:
+      - resources:
+          limits:
+            cpu: 50m
+            memory: 64Mi
+          requests:
+            memory: 8Mi
+
+# Cert-Manager Chart
   - name: cert-manager
     namespace: cert-manager
     chart: jetstack/cert-manager
     version: v1.11.0
+    needs:
+      - kube-system/traefik
+      - kube-system/kubernetes-replicator
     installed: true
     values:
       - values/{{ .Environment.Name }}.yaml
@@ -65,18 +97,10 @@ releases:
     namespace: default
     chart: ./dummy-page
     needs:
-      - cert-manager/cert-manager
       - cert-manager/ingress
     values:
       - values/{{ .Environment.Name }}.yaml
       - namespace: default
-
-# Kube system: traefik metrics 
-  - name: kube-system
-    namespace: kube-system
-    chart: ./kube-system
-    values:
-      - values/{{ .Environment.Name }}.yaml
 
 # Mail: persistent storage 
   - name: mail-storage
@@ -90,7 +114,7 @@ releases:
     namespace: monitoring
     chart: prometheus-community/kube-prometheus-stack
     needs:
-      - kube-system/kube-system
+      - kube-system/traefik
     version: "72.6.3"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
     # install crds
     # 
@@ -124,7 +148,7 @@ releases:
     # 
     needs:
       - cert-manager/cert-manager
-      - cert-manager/ingress
+      - kube-system/traefik
       - mail/mail-storage
     values:
       - values/{{ .Environment.Name }}.yaml
@@ -135,7 +159,7 @@ releases:
     namespace: monitoring
     chart: grafana/loki-stack
     needs:
-      - kube-system/kube-system
+      - kube-system/traefik
     version: "2.10.2"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
     values:
       - values/{{ .Environment.Name }}.yaml
