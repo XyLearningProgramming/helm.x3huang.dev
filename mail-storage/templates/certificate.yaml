@@ -13,7 +13,7 @@ type: kubernetes.io/tls
 data:
   tls.key: ""
   tls.crt: ""
-  ca:crt: ""
+  ca.crt: ""
 
 # # Deprecated:
 # 
