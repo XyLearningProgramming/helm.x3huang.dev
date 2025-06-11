@@ -83,6 +83,12 @@ sudo vim /var/lib/rancher/k3s/server/manifests/coredns.yaml
 kubectl rollout restart deployment coredns -n kube-system
 ```
 
+8. Traefik relies on prom. crd for service monitor first... Have to install this CRD manually. Also, it sometimes doesn't know crd at run time for some reason? Add this flag then.
+   
+```bash
+helmfile template --output-dir rendered --args "--api-versions=monitoring.coreos.com/v1"
+```
+
 ## Helpers
 
 ```bash

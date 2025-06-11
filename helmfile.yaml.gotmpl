@@ -53,6 +53,8 @@ releases:
             memory: 64Mi
           requests:
             memory: 8Mi
+        args:
+          - -resync-period=5m
 
 # Cert-Manager Chart
   - name: cert-manager
@@ -133,7 +135,7 @@ releases:
       - values/{{ .Environment.Name }}.yaml
       - prom-stack/values.yaml.gotmpl
     set:
-      - name: installCRDs
+      - name: crds.enabled
         value: false
 
 # Mail Server

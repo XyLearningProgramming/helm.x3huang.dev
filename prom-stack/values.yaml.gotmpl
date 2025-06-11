@@ -21,6 +21,10 @@ kubeApiServer:
 
 kubelet:
   enabled: true
+  serviceMonitor:
+    enabled: true
+    kubelet: true
+    interval: "59s"
 
 kubeProxy:
   enabled: false
@@ -29,6 +33,9 @@ kubeProxy:
 #
 coreDns:
   enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: "67s"
 # additionalServiceMonitors:
 #   - name: coredns
 #     namespaceSelector:
@@ -45,14 +52,18 @@ coreDns:
 # 
 # Enable node exporter to collect host metrics
 prometheus-node-exporter:
+  prometheus:
+    monitor:
+      enabled: true
+      interval: "61s"
   extraArgs:
-    - --collector.systemd
     - --collector.processes
     - --collector.cpu
     - --collector.meminfo
     - --collector.netdev
     - --collector.loadavg
     - --collector.diskstats
+    # - --collector.systemd # commented out, not mounting /var/run/dbus for now
     # - --collector.filesystem
 
 prometheus:
@@ -86,12 +97,12 @@ prometheus:
             name: helmfile-secret-monitoring
             key: GRAFANA_CLOUD_API_KEY
         queueConfig:
-          batchSendDeadline: 5m          # Increased from 3m to allow more time for batches
+          batchSendDeadline: 1m          # Same as scrapeInterval
           maxSamplesPerSend: 200         # Increased from 100 to reduce number of API calls
           capacity: 5000                 # Increased from 5000 to handle more samples
-          maxShards: 10                   # Increased from 3 to handle higher throughput
+          maxShards: 7                   # Increased from 3 to handle higher throughput, 200*7 < 1500/s as limit
           minShards: 1                    # Increased from 1 to ensure minimum throughput
-          retryOnRateLimit: false
+          retryOnRateLimit: true
         writeRelabelConfigs:
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}
