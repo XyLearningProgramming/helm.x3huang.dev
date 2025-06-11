@@ -107,6 +107,30 @@ prometheus:
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}
             action: replace
+            # Reduce cardinality by this usage report
+            # 
+            # etcd_request_duration_seconds_bucket
+            # 191912.8%unused
+            # apiserver_request_body_size_bytes_bucket
+            # 10406.93%unused
+            # workqueue_queue_duration_seconds_bucket
+            # 10016.67%unused
+            # workqueue_work_duration_seconds_bucket
+            # 10016.67%unused
+            # scheduler_plugin_execution_duration_seconds_bucket
+            # 6934.62%unused
+            # apiserver_request_sli_duration_seconds_bucket
+            # 5503.67%unused
+            # apiserver_admission_controller_admission_duration_seconds_bucket
+            # 3432.29%unused
+            # etcd_requests_total
+            # 2851.90%unused
+            # apiserver_flowcontrol_request_execution_seconds_bucket
+            # 2801.87%unused
+          - sourceLabels: ["__name__"]
+            regex: "etcd_request_duration_seconds_bucket|etcd_requests_total|apiserver_request_body_size_bytes_bucket|apiserver_request_sli_duration_seconds_bucket|apiserver_admission_controller_admission_duration_seconds_bucket|apiserver_flowcontrol_request_execution_seconds_bucket|workqueue_queue_duration_seconds_bucket|workqueue_work_duration_seconds_bucket|scheduler_plugin_execution_duration_seconds_bucket"
+            action: drop
+
     # Allow Prometheus to discover all PodMonitors/ServiceMonitors within its namespace, 
     # without applying label filtering
     # Ref: https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack#prometheus-io-scrape
