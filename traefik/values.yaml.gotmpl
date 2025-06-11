@@ -1,8 +1,10 @@
 
 deployment:
-  podAnnotations:
-    prometheus.io/port: "8082"
-    prometheus.io/scrape: "true"
+  # Use ServiceMonitor instead
+  #
+  # podAnnotations:
+  #   prometheus.io/port: "8082"
+  #   prometheus.io/scrape: "true"
 
 priorityClassName: "system-cluster-critical"
 
@@ -36,11 +38,8 @@ metrics:
     serviceMonitor:
       enabled: true              # Enable ServiceMonitor resource
       interval: "1m"           # Scrape interval
-      honorLabels: true         # Keep original labels
     service:
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9100"
+      enabled: true
 
 ########################################
 ## 2) ENTRYPOINT DEFINITIONS           ##

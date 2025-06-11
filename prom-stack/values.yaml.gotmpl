@@ -22,25 +22,37 @@ kubeApiServer:
 kubelet:
   enabled: true
 
-# For node-exporter, default is good enough.
+kubeProxy:
+  enabled: false
+
+# CoreDNS relies on default config, good enough.
+#
+coreDns:
+  enabled: true
+# additionalServiceMonitors:
+#   - name: coredns
+#     namespaceSelector:
+#       matchNames: ["kube-system"]
+#     selector:
+#       matchLabels:
+#         k8s-app: kube-dns
+#     endpoints:
+#       - port: metrics
+#         interval: 1m
+
+# For node-exporter, default is and I'd like to add host machine metrics in addition:
 # Ref: https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
 # 
-# # Enable node exporter to collect host metrics
-# prometheus-node-exporter:
-#   enabled: true
-#   # hostRootfs: true
-#   extraArgs:
-#     # - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
-#     - --collector.systemd
-#     - --collector.processes
-#     - --collector.cpu
-#     - --collector.meminfo
-#     - --collector.netdev
-#     - --collector.loadavg
-#     # - --collector.diskstats
-#     # - --collector.filesystem
-#     - --no-collector.filesystem # it is usually more than enough.
-#     - --no-collector.diskstats
+# Enable node exporter to collect host metrics
+prometheus-node-exporter:
+  extraArgs:
+    - --collector.systemd
+    - --collector.processes
+    - --collector.cpu
+    - --collector.meminfo
+    - --collector.netdev
+    - --collector.loadavg
+    - --collector.diskstats
 
 prometheus:
   prometheusSpec:
@@ -83,16 +95,12 @@ prometheus:
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}
             action: replace
-          # # 1) KEEP only the selected metrics from kubelet
-          # - sourceLabels: [job, __name__]  # Fix: source_labels -> sourceLabels
-          #   regex: '^(?:kubelet);(?:container_memory_working_set_bytes|machine_memory_bytes|container_memory_usage_bytes|container_cpu_usage_seconds_total|machine_cpu_cores|machine_cpu_physical_cores|container_fs_usage_bytes|container_fs_limit_bytes|container_network_receive_bytes_total|container_network_transmit_bytes_total)$'
-          #   action: keep
-          # # 2) DROP any remaining kubelet metrics
-          # - sourceLabels: [job]  # Fix: source_labels -> sourceLabels
-          #   regex: '^kubelet$'
-          #   action: drop
-    # additionalScrapeConfigs: |
-    #   - job_name: traefik
-    #     metrics_path: /metrics
-    #     static_configs:
-    #       - targets: ["traefik-metrics-service.kube-system.svc:9100"]
+    # Allow Prometheus to discover all PodMonitors/ServiceMonitors within its namespace, 
+    # without applying label filtering
+    # Ref: https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack#prometheus-io-scrape
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}

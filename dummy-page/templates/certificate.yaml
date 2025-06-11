@@ -5,6 +5,8 @@ kind: Secret
 metadata:
   name: {{ .Values.DOMAIN }}-tls
   namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "dummy-page.fullname" . }}
   annotations:
     replicator.v1.mittwald.de/replicate-from: cert-manager/{{ .Values.DOMAIN }}-tls
 type: kubernetes.io/tls

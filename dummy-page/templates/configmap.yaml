@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: {{ include "dummy-page.fullname" . }}-html
   namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ include "dummy-page.fullname" . }}
 data:
   index.html: |
 {{ .Values.html.index | indent 4 }}

@@ -58,6 +58,31 @@ mkdir -p /var/mail
 mkdir -p /tmp/docker-mailserver
 ```
 
+7. Default coredns have these error logs without custom configs, comment out these lines to avoid them from being emitted.
+
+Ref: https://github.com/k3s-io/k3s/issues/7639#issuecomment-1592172869
+
+```log
+[WARNING] No files matching import glob pattern: /etc/coredns/custom/*.override 
+[WARNING] No files matching import glob pattern: /etc/coredns/custom/*.server 
+```
+
+```yaml
+# /var/lib/rancher/k3s/server/manifests/coredns.yaml
+data:
+  Corefile: |
+    .:53 {
+        # ...
+        # import /etc/coredns/custom/*.override
+    }
+    # import /etc/coredns/custom/*.server
+```
+
+```bash
+sudo vim /var/lib/rancher/k3s/server/manifests/coredns.yaml
+kubectl rollout restart deployment coredns -n kube-system
+```
+
 ## Helpers
 
 ```bash

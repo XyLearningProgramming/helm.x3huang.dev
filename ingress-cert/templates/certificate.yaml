@@ -6,6 +6,8 @@ metadata:
   annotations:
     replicator.v1.mittwald.de/replication-allowed: "true"
     replicator.v1.mittwald.de/replication-allowed-namespaces: ".*"
+  labels:
+    {{- include "ingress-cert.labels" . | nindent 4 }}
 spec:
   secretName: {{ .Values.DOMAIN }}-tls
   dnsNames:
