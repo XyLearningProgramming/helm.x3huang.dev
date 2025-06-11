@@ -133,7 +133,7 @@ releases:
       - values/{{ .Environment.Name }}.yaml
       - prom-stack/values.yaml.gotmpl
     set:
-      - name: installCRDs
+      - name: crds.enabled
         value: false
 
 # Mail Server

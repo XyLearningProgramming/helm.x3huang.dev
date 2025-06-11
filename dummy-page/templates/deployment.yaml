@@ -24,9 +24,15 @@ spec:
             - name: html
               mountPath: /usr/share/nginx/html/index.html
               subPath: index.html
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
       resources:
         {{- toYaml .Values.resources | nindent 8 }}  
       volumes:
         - name: html
           configMap:
             name: {{ include "dummy-page.fullname" . }}-html
+        - name: nginx-conf
+          configMap:
+            name: {{ include "dummy-page.fullname" . }}-nginx-conf
