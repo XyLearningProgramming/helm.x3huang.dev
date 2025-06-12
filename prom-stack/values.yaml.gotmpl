@@ -125,19 +125,14 @@ prometheus:
             # 2851.90%unused
             # apiserver_flowcontrol_request_execution_seconds_bucket
             # 2801.87%unused
-          {{- $dropMetrics := list 
-              "etcd_request_duration_seconds"
-              "etcd_requests"
-              "apiserver_request_body_size_bytes"
-              "apiserver_request_sli_duration_seconds"
-              "apiserver_admission_controller_admission_duration_seconds"
-              "apiserver_flowcontrol_request_execution_seconds"
-              "workqueue_queue_duration_seconds"
-              "workqueue_work_duration_seconds"
-              "scheduler_plugin_execution_duration_seconds"
+          {{- $dropPrefixes := list 
+              "etcd"
+              "apiserver"
+              "workqueue"
+              "scheduler"
           }}
           - sourceLabels: ["__name__"]
-            regex: {{ printf "^(?:%s)_(?:bucket|sum|count|total)$" (join "|" $dropMetrics) }}
+            regex: {{ printf "^(?:%s)_.*" (join "|" $dropPrefixes) }}
             action: drop
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}

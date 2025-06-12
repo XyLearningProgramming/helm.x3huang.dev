@@ -115,7 +115,6 @@ releases:
   - name: kube-prom-stack
     namespace: monitoring
     chart: prometheus-community/kube-prometheus-stack
-    installed: {{ eq .Environment.Name "prod" }}
     needs:
       - kube-system/traefik
     version: "72.6.3"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
