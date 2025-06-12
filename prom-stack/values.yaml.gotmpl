@@ -104,9 +104,6 @@ prometheus:
           minShards: 1                    # Increased from 1 to ensure minimum throughput
           retryOnRateLimit: true
         writeRelabelConfigs:
-          - targetLabel: domain
-            replacement: {{ .Values | get "DOMAIN" }}
-            action: replace
             # Reduce cardinality by this usage report
             # 
             # etcd_request_duration_seconds_bucket
@@ -127,10 +124,23 @@ prometheus:
             # 2851.90%unused
             # apiserver_flowcontrol_request_execution_seconds_bucket
             # 2801.87%unused
+          {{- $dropMetrics := list 
+              "etcd_request_duration_seconds"
+              "etcd_requests"
+              "apiserver_request_body_size_bytes"
+              "apiserver_request_sli_duration_seconds"
+              "apiserver_admission_controller_admission_duration_seconds"
+              "apiserver_flowcontrol_request_execution_seconds"
+              "workqueue_queue_duration_seconds"
+              "workqueue_work_duration_seconds"
+              "scheduler_plugin_execution_duration_seconds"
+          }}
           - sourceLabels: ["__name__"]
-            regex: "etcd_request_duration_seconds_bucket|etcd_requests_total|apiserver_request_body_size_bytes_bucket|apiserver_request_sli_duration_seconds_bucket|apiserver_admission_controller_admission_duration_seconds_bucket|apiserver_flowcontrol_request_execution_seconds_bucket|workqueue_queue_duration_seconds_bucket|workqueue_work_duration_seconds_bucket|scheduler_plugin_execution_duration_seconds_bucket"
+            regex: {{ printf "^(?:%s)_(?:bucket|sum|count|total)$" (join "|" $dropMetrics) }}
             action: drop
-
+          - targetLabel: domain
+            replacement: {{ .Values | get "DOMAIN" }}
+            action: replace
     # Allow Prometheus to discover all PodMonitors/ServiceMonitors within its namespace, 
     # without applying label filtering
     # Ref: https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack#prometheus-io-scrape
