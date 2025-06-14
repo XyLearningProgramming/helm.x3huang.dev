@@ -1,5 +1,17 @@
-# values-postgres.yaml
-# Replace these literal values or use a kustomize/CI templating step to inject real secrets.
+# postgres.values.yaml.gotmpl
+global:
+  postgresql:
+    # Must run ./scripts/apply-secrets.sh before this
+    auth:
+      password: {{ exec "sh" (list "-c" "kubectl get secret --namespace db helmfile-secret-db -o jsonpath='{.data.USER_PASSWORD}' | base64 -d") | quote }}
+      # username: "app"
+      # database: "app"
+      # existingSecret: "helmfile-secret-db"
+      # secretKeys:
+      #   adminPasswordKey: "POSTGRES_PASSWORD"
+      #   userPasswordKey: "USER_PASSWORD"
+
+
 auth:
   username: "app"
   database: "app"
@@ -40,8 +52,28 @@ primary:
       matchLabels:
         app.kubernetes.io/name: "db-storage"
         app.kubernetes.io/instance: "db-storage"
+  resources:
+    requests:
+      memory: 64Mi
+    limits:
+      cpu: 1
+      memory: 512Mi
 
 service:
   type: ClusterIP
+
+# Ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql#prometheus-metrics
+# https://github.com/bitnami/charts/blob/main/bitnami/postgresql/values.yaml#L1697
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 67s
+  resources:
+    requests:
+      memory: 4Mi
+    limits:
+      cpu: 50m
+      memory: 32Mi
 
 fullnameOverride: "postgres"
