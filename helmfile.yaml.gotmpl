@@ -27,6 +27,8 @@ repositories:
     url: https://traefik.github.io/charts
   - name: mittwald
     url: https://helm.mittwald.de
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
 ---
 releases:
 # Traefik: replace the default k3s traefik with explicit config
@@ -115,7 +117,6 @@ releases:
   - name: kube-prom-stack
     namespace: monitoring
     chart: prometheus-community/kube-prometheus-stack
-    installed: {{ eq .Environment.Name "prod" }}
     needs:
       - kube-system/traefik
     version: "72.6.3"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
@@ -167,3 +168,21 @@ releases:
     values:
       - values/{{ .Environment.Name }}.yaml
       - loki-stack/values.yaml.gotmpl
+
+# DB: persistent storage 
+  - name: db-storage
+    namespace: db
+    chart: ./db-storage
+    values:
+      - values/{{ .Environment.Name }}.yaml
+
+# Postgres stack
+  - name: postgres
+    namespace: db
+    chart: bitnami/postgresql
+    version: 16.7.11    
+    needs:
+      - db/db-storage
+    values:
+      - values/{{ .Environment.Name }}.yaml
+      - db/postgres.values.yaml.gotmpl

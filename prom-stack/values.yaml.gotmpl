@@ -105,40 +105,34 @@ prometheus:
           minShards: 1                    # Increased from 1 to ensure minimum throughput
           retryOnRateLimit: true
         writeRelabelConfigs:
-            # Reduce cardinality by this usage report
-            # 
-            # etcd_request_duration_seconds_bucket
-            # 191912.8%unused
-            # apiserver_request_body_size_bytes_bucket
-            # 10406.93%unused
-            # workqueue_queue_duration_seconds_bucket
-            # 10016.67%unused
-            # workqueue_work_duration_seconds_bucket
-            # 10016.67%unused
-            # scheduler_plugin_execution_duration_seconds_bucket
-            # 6934.62%unused
-            # apiserver_request_sli_duration_seconds_bucket
-            # 5503.67%unused
-            # apiserver_admission_controller_admission_duration_seconds_bucket
-            # 3432.29%unused
-            # etcd_requests_total
-            # 2851.90%unused
-            # apiserver_flowcontrol_request_execution_seconds_bucket
-            # 2801.87%unused
-          {{- $dropMetrics := list 
-              "etcd_request_duration_seconds"
-              "etcd_requests"
-              "apiserver_request_body_size_bytes"
-              "apiserver_request_sli_duration_seconds"
-              "apiserver_admission_controller_admission_duration_seconds"
-              "apiserver_flowcontrol_request_execution_seconds"
-              "workqueue_queue_duration_seconds"
-              "workqueue_work_duration_seconds"
-              "scheduler_plugin_execution_duration_seconds"
+            # Reduce cardinality of metrics not in use.
+          {{- $dropPrefixes := list 
+              "apiserver"
+              "container_blkio"
+              "etcd"
+              "kubelet_runtime_operations"
+              "lasso_controller"
+              "prober_probe"
+              "scheduler"
+              "storage_operation"
+              "workqueue"
           }}
           - sourceLabels: ["__name__"]
-            regex: {{ printf "^(?:%s)_(?:bucket|sum|count|total)$" (join "|" $dropMetrics) }}
+            regex: {{ printf "^(?:%s)_.*" (join "|" $dropPrefixes) }}
             action: drop
+          # Reduce cardinality of labels that don't make sense to dashboards.
+          - sourceLabels: [uid]
+            regex: ".*"
+            action: labeldrop
+          - sourceLabels: [container_id]
+            regex: ".*"
+            action: labeldrop
+          - sourceLabels: [id]
+            regex: ".*"
+            action: labeldrop
+          - sourceLabels: [crd]
+            regex: ".*"
+            action: labeldrop
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}
             action: replace
