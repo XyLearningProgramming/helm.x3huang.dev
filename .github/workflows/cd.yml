@@ -55,12 +55,13 @@ jobs:
         run: echo '${{ secrets.SECRETS_MAIL_RSA_PRIVATE }}' > ./secrets/mail.rsa.private.txt
 
       - name: Write secrets db
-        run: echo '${{ secrets.SECRETS_DB }}' > ./secrets/db.env
-
+        run: |
+          echo '${{ secrets.SECRETS_DB }}' > ./secrets/db.env
+          
       - name: Apply secrets
         run: |
           ./scripts/apply-secrets.sh
-      
+     
       - name: Dry‑run (Diff) before Apply
         uses: helmfile/helmfile-action@v2.0.4
         with:
