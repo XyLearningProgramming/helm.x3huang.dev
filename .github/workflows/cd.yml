@@ -55,9 +55,14 @@ jobs:
         run: echo '${{ secrets.SECRETS_MAIL_RSA_PRIVATE }}' > ./secrets/mail.rsa.private.txt
 
       - name: Write secrets db
+<<<<<<< HEAD
         run: |
           echo '${{ secrets.SECRETS_DB }}' > ./secrets/db.env
           
+=======
+        run: echo '${{ secrets.SECRETS_DB }}' > ./secrets/db.env
+
+>>>>>>> origin
       - name: Apply secrets
         run: |
           ./scripts/apply-secrets.sh
