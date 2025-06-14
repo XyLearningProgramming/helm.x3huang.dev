@@ -3,7 +3,7 @@ global:
   postgresql:
     # Must run ./scripts/apply-secrets.sh before this
     auth:
-      password: {{ exec "sh" (list "-c" "kubectl get secret --namespace db helmfile-secret-db -o jsonpath='{.data.USER_PASSWORD}' | base64 -d") | quote }}
+      password: {{ exec "sh" (list "-c" "kubectl get secret --namespace db helmfile-secret-db -o jsonpath='{.data.USER_PASSWORD}' | base64 -d") | quote | default "****" }}
       # username: "app"
       # database: "app"
       # existingSecret: "helmfile-secret-db"
@@ -58,6 +58,51 @@ primary:
     limits:
       cpu: 1
       memory: 512Mi
+  initdb:
+    user: "postgres"
+    password: {{ exec "sh" (list "-c" "kubectl get secret -n db helmfile-secret-db -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d") | quote | default "****" }}
+    scripts:
+      {{- /* Discover all CUSTOM_USER_<SUFFIX> keys */ -}}
+      {{- $jsonKeys := exec "sh" (list "-c" "kubectl get secret -n db helmfile-secret-db -o json | jq -r '.data | keys[] | select(startswith(\"CUSTOM_USER_\"))'") }}
+      {{- $userKeys := splitList "\n" ($jsonKeys | trim) }}
+      {{- range $i, $uk := $userKeys }}
+      {{- if ne $uk "" }}
+      {{- $suffix := trimPrefix "CUSTOM_USER_" $uk }}
+      {{- $suffixLower := lower $suffix }}
+      {{- /* Commands to fetch user, password, and database name: */ -}}
+      {{- $fetchUserCmd := printf "kubectl get secret -n db helmfile-secret-db -o jsonpath='{.data.CUSTOM_USER_%s}' | base64 -d" $suffix }}
+      {{- $fetchPassCmd := printf "kubectl get secret -n db helmfile-secret-db -o jsonpath='{.data.CUSTOM_PASSWORD_%s}' | base64 -d" $suffix }}
+      {{- /* For database: try CUSTOM_DATABASE_<SUFFIX>, else CUSTOM_DATABASE */ -}}
+      {{- $fetchDbCmd := printf "bash -c 'key=CUSTOM_DATABASE_%s; v=$(kubectl get secret -n db helmfile-secret-db -o jsonpath=\"{.data.$key}\" 2>/dev/null | base64 -d); if [ -z \"$v\" ]; then v=$(kubectl get secret -n db helmfile-secret-db -o jsonpath=\"{.data.CUSTOM_DATABASE}\" | base64 -d); fi; echo \"$v\"'" $suffix }}
+      {{- $userVal := exec "sh" (list "-c" $fetchUserCmd) | trim }}
+      {{- $passVal := exec "sh" (list "-c" $fetchPassCmd) | trim }}
+      {{- $dbVal := exec "sh" (list "-c" $fetchDbCmd) | trim }}
+      create_user_and_db_{{ $suffixLower }}.sql: |
+        -- Auto-generated SQL to create user and database for {{ $userVal }}
+        -- 1. Create role IF NOT EXISTS
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_roles WHERE rolname = '{{ $userVal }}'
+          ) THEN
+            CREATE ROLE "{{ $userVal }}" WITH LOGIN PASSWORD '{{ $passVal }}';
+          END IF;
+        END
+        $$;
+
+        -- 2. Create database if not exists using SELECT ... \gexec
+        SELECT 'CREATE DATABASE "{{ $dbVal }}" OWNER "{{ $userVal }}" ENCODING ''UTF8'';'
+          WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname='{{ $dbVal }}');
+        \gexec
+
+        -- 3. Grant CONNECT on database
+        GRANT CONNECT ON DATABASE "{{ $dbVal }}" TO "{{ $userVal }}";
+
+        -- 4. Grant privileges inside the new database
+        \connect "{{ $dbVal }}"
+        GRANT ALL PRIVILEGES ON SCHEMA public TO "{{ $userVal }}";
+      {{- end }}
+      {{- end }}
 
 service:
   type: ClusterIP

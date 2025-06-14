@@ -55,18 +55,45 @@ jobs:
         run: echo '${{ secrets.SECRETS_MAIL_RSA_PRIVATE }}' > ./secrets/mail.rsa.private.txt
 
       - name: Write secrets db
-<<<<<<< HEAD
         run: |
           echo '${{ secrets.SECRETS_DB }}' > ./secrets/db.env
           
-=======
-        run: echo '${{ secrets.SECRETS_DB }}' > ./secrets/db.env
-
->>>>>>> origin
       - name: Apply secrets
         run: |
           ./scripts/apply-secrets.sh
-     
+      
+      - name: Mask env secrets
+        run: |
+          # Function to mask secrets from env files
+          mask_secrets() {
+            local file=$1
+            echo "Masking secrets from $file"
+            while IFS='=' read -r key value; do
+              # Skip empty lines and comments
+              [[ -z "$key" || "$key" =~ ^# ]] && continue
+              # Mask the original value
+              echo "::add-mask::$value"
+              # Mask the base64 encoded value
+              encoded=$(echo -n "$value" | base64)
+              echo "::add-mask::$encoded"
+            done < "$file"
+          }
+
+          # List of secret files to mask
+          secret_files=(
+            "./secrets/db.env"
+            "./secrets/monitoring.env"
+          )
+
+          # Process each secret file
+          for file in "${secret_files[@]}"; do
+            if [[ -f "$file" ]]; then
+              mask_secrets "$file"
+            else
+              echo "Warning: $file not found"
+            fi
+          done
+
       - name: Dry‑run (Diff) before Apply
         uses: helmfile/helmfile-action@v2.0.4
         with:
