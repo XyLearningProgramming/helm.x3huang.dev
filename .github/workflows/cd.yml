@@ -93,7 +93,7 @@ jobs:
               echo "Warning: $file not found"
             fi
           done
-          
+
       - name: Dry‑run (Diff) before Apply
         uses: helmfile/helmfile-action@v2.0.4
         with:
