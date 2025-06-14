@@ -1,0 +1,39 @@
+# -----------------------------------------
+# PersistentVolume for postgres
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-data-pv
+  labels:
+    {{- include "db-storage.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: postgres-data
+  local:
+    path: /usr/local/pgsql/data
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ .Values.POSTGRES_NODE }}
+---
+# -----------------------------------------
+# StorageClasses for postgres
+# -----------------------------------------
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: postgres-data
+  labels:
+    {{- include "db-storage.labels" . | nindent 4 }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete

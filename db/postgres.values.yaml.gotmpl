@@ -1,0 +1,47 @@
+# values-postgres.yaml
+# Replace these literal values or use a kustomize/CI templating step to inject real secrets.
+auth:
+  username: "app"
+  database: "app"
+  existingSecret: "helmfile-secret-db"
+  secretKeys:
+    adminPasswordKey: "POSTGRES_PASSWORD"
+    userPasswordKey: "USER_PASSWORD"
+
+resources:
+  requests:
+    memory: 64Mi
+  limits:
+    cpu: 1
+    memory: 512Mi
+
+# TODO (xinyu): mount secret as file to create multiple users.
+# eg. CREATE USER app1 WITH PASSWORD pg_read_file('/opt/bitnami/postgresql/secrets/app1-password');
+# 
+# initdbScripts:
+#   create-app-user.sql: |
+#     CREATE USER appuser WITH PASSWORD 'apppassword';
+#     GRANT ALL PRIVILEGES ON DATABASE mydatabase TO appuser;
+
+replication:
+  enabled: false
+
+tls:
+  enabled: false
+
+primary:
+  nodeSelector:
+    kubernetes.io/hostname: "{{ .Values.POSTGRES_NODE }}"
+  persistence:
+    enabled: true
+    storageClass: "postgres-data"
+    size: "10Gi"
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: "db-storage"
+        app.kubernetes.io/instance: "db-storage"
+
+service:
+  type: ClusterIP
+
+fullnameOverride: "postgres"
