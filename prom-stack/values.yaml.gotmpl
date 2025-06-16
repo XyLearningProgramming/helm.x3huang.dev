@@ -121,17 +121,13 @@ prometheus:
             regex: {{ printf "^(?:%s)_.*" (join "|" $dropPrefixes) }}
             action: drop
           # Reduce cardinality of labels that don't make sense to dashboards.
-          - sourceLabels: [uid]
-            regex: ".*"
+          - regex: "uid"
             action: labeldrop
-          - sourceLabels: [container_id]
-            regex: ".*"
+          - regex: "container_id"
             action: labeldrop
-          - sourceLabels: [id]
-            regex: ".*"
+          - regex: "id"
             action: labeldrop
-          - sourceLabels: [crd]
-            regex: ".*"
+          - regex: "crd"
             action: labeldrop
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}
