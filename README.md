@@ -95,3 +95,9 @@ helmfile template --output-dir rendered --args "--api-versions=monitoring.coreos
 # Render mailserver to helm chart
 helmfile -e prod template --output-dir rendered
 ```
+
+```bash
+# Force replicator to sync secrets again.
+kubectl annotate secret x3huang.dev-tls -n cert-manager \
+  replicate-trigger="$(date -u +%Y-%m-%dT%H:%M:%SZ)" --overwrite
+```
