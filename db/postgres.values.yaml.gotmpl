@@ -120,5 +120,11 @@ metrics:
     limits:
       cpu: 50m
       memory: 32Mi
+  collectors:
+    # Do not list wal directory contents; must grant monitor user
+    # the pg_monitor role if need it in future:
+    # GRANT pg_monitor TO monitoring_user;
+    # Ref: https://github.com/prometheus-community/postgres_exporter#flags
+    wal: false
 
 fullnameOverride: "postgres"
