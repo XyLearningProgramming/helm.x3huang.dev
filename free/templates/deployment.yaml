@@ -35,6 +35,31 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+
+      # 1) InitContainer to stitch in the real password
+      initContainers:
+      - name: init-config
+        image: busybox
+        command:
+          - sh
+          - -c
+          - |
+            # read the raw JSON, replace placeholder, write to workdir
+            sed "s/password2/${TROJAN_PASSWORD}/g" /raw-config/config.json \
+                > /patched-config/config.json
+        env:
+          - name: TROJAN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName }}
+                key: TROJAN_PASSWORD
+        volumeMounts:
+          # Mount the original ConfigMap
+          - name: raw-config
+            mountPath: /raw-config
+          # Mount the shared work directory
+          - name: patched-config
+            mountPath: /patched-config
       containers:
         - name: {{ .Chart.Name }}
           {{- with .Values.securityContext }}
@@ -63,14 +88,16 @@ spec:
             - name: tls
               mountPath: "/etc/tls/"
               readOnly: true
-            - name: trojan-config
+            - name: patched-config
               mountPath: "/config/"
       volumes:
         - name: tls
           secret:
             secretName: {{ .Values.DOMAIN }}-tls
             optional: false
-        - name: trojan-config
+        - name: patched-config
+          emptyDir: {}
+        - name: raw-config
           configMap:
             name: trojan-config
       {{- with .Values.nodeSelector }}

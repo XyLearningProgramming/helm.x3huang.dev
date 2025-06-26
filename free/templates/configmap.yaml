@@ -13,7 +13,7 @@ data:
       "local_port": 443,
       "remote_addr": "frontend-frontend-nuxt.frontend.svc.cluster.local",
       "remote_port": 80,
-      "password": ["{{ .Values.TROJAN_PASSWORD }}"],
+      "password": ["password2"],
       "log_level": 1,
       "ssl": {
         "verify": true,

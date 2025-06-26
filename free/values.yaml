@@ -123,3 +123,6 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+secretName: helmfile-secret-free
+
