@@ -8,10 +8,10 @@ helmDefaults:
 environments:
   default:
     values:
-      - values/default.yaml
+      - values/default.yaml.gotmpl
   prod:
     values:
-      - values/prod.yaml
+      - values/prod.yaml.gotmpl
 ---
 # Repositories
 repositories:
@@ -40,7 +40,7 @@ releases:
     #
     # helm install traefik-crds traefik/traefik-crds
     values:
-      - values/{{ .Environment.Name }}.yaml
+      - values/{{ .Environment.Name }}.yaml.gotmpl
       - traefik/values.yaml.gotmpl
 
 # Replicator: copy tls secrets to different ns
@@ -68,7 +68,7 @@ releases:
       - kube-system/kubernetes-replicator
     installed: true
     values:
-      - values/{{ .Environment.Name }}.yaml
+      - values/{{ .Environment.Name }}.yaml.gotmpl
       - namespace: cert-manager
       - resources:
           limits:
@@ -91,7 +91,7 @@ releases:
     needs:
       - cert-manager/cert-manager
     values:
-      - values/{{ .Environment.Name }}.yaml
+      - values/{{ .Environment.Name }}.yaml.gotmpl
     set:
       - name: Environment
         value: {{ .Environment.Name }}
@@ -103,7 +103,7 @@ releases:
     needs:
       - cert-manager/ingress
     values:
-      - values/{{ .Environment.Name }}.yaml
+      - values/{{ .Environment.Name }}.yaml.gotmpl
       - namespace: default
 
 # Mail: persistent storage 
@@ -111,7 +111,7 @@ releases:
     namespace: mail
     chart: ./mail-storage
     values:
-      - values/{{ .Environment.Name }}.yaml
+      - values/{{ .Environment.Name }}.yaml.gotmpl
 
 # Prometheus stack
   - name: kube-prom-stack
@@ -134,7 +134,7 @@ releases:
     # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.82/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
     # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.82/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
     values:
-      - values/{{ .Environment.Name }}.yaml
+      - values/{{ .Environment.Name }}.yaml.gotmpl
       - prom-stack/values.yaml.gotmpl
     set:
       - name: crds.enabled
@@ -155,7 +155,7 @@ releases:
       - kube-system/traefik
       - mail/mail-storage
     values:
-      - values/{{ .Environment.Name }}.yaml
+      - values/{{ .Environment.Name }}.yaml.gotmpl
       - mail/values.yaml.gotmpl
 
 # Loki stack
@@ -166,7 +166,7 @@ releases:
       - kube-system/traefik
     version: "2.10.2"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
     values:
-      - values/{{ .Environment.Name }}.yaml
+      - values/{{ .Environment.Name }}.yaml.gotmpl
       - loki-stack/values.yaml.gotmpl
 
 # DB: persistent storage 
@@ -174,7 +174,7 @@ releases:
     namespace: db
     chart: ./db-storage
     values:
-      - values/{{ .Environment.Name }}.yaml
+      - values/{{ .Environment.Name }}.yaml.gotmpl
 
 # Postgres stack
   - name: postgres
@@ -184,5 +184,14 @@ releases:
     needs:
       - db/db-storage
     values:
-      - values/{{ .Environment.Name }}.yaml
+      - values/{{ .Environment.Name }}.yaml.gotmpl
       - db/postgres.values.yaml.gotmpl
+
+# Free protocols
+  - name: free
+    namespace: free
+    chart: ./free
+    needs:
+      - cert-manager/ingress
+    values:
+      - values/{{ .Environment.Name }}.yaml.gotmpl

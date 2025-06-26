@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trojan-{{ include "free.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "free.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: trojan-{{ include "free.name" . }}
+      {{- include "free.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app.kubernetes.io/name: trojan-{{ include "free.name" . }}
+        {{- include "free.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "free.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      # 1) InitContainer to stitch in the real password
+      initContainers:
+      - name: init-config
+        image: busybox
+        command:
+          - sh
+          - -c
+          - |
+            # read the raw JSON, replace placeholder, write to workdir
+            sed "s/password2/${TROJAN_PASSWORD}/g" /raw-config/config.json \
+                > /patched-config/config.json
+        env:
+          - name: TROJAN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.secretName }}
+                key: TROJAN_PASSWORD
+        volumeMounts:
+          # Mount the original ConfigMap
+          - name: raw-config
+            mountPath: /raw-config
+          # Mount the shared work directory
+          - name: patched-config
+            mountPath: /patched-config
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: {{ .Values.service.portName }}
+              containerPort: {{ .Values.service.port }}
+              protocol: {{ .Values.service.protocol }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tls
+              mountPath: "/etc/tls/"
+              readOnly: true
+            - name: patched-config
+              mountPath: "/config/"
+      volumes:
+        - name: tls
+          secret:
+            secretName: {{ .Values.DOMAIN }}-tls
+            optional: false
+        - name: patched-config
+          emptyDir: {}
+        - name: raw-config
+          configMap:
+            name: trojan-config
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

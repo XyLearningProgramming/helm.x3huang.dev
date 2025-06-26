@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: trojan-{{ include "free.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "free.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.portName }}
+      protocol: {{ .Values.service.protocol }}
+      name: {{ .Values.service.portName }}
+  selector:
+    app.kubernetes.io/name: trojan-{{ include "free.name" . }}
+    {{- include "free.selectorLabels" . | nindent 4 }}

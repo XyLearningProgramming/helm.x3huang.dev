@@ -13,6 +13,9 @@ spec:
     - mail.{{ .Values.DOMAIN }}
     - smtp.{{ .Values.DOMAIN }}
     - imap.{{ .Values.DOMAIN }}
+    - freetj.{{ .Values.DOMAIN }}
+    - freev2.{{ .Values.DOMAIN }}
+    - freexr.{{ .Values.DOMAIN }}
   issuerRef:
     name: {{ .Values.ISSUER_NAME }}
     kind: ClusterIssuer
