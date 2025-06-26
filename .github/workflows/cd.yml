@@ -57,7 +57,11 @@ jobs:
       - name: Write secrets db
         run: |
           echo '${{ secrets.SECRETS_DB }}' > ./secrets/db.env
-          
+      
+      - name: Export secrets trojan
+        run: |
+          export TROJAN_PASSWORD='${{ secrets.SECRETS_TROJAN_PASSWORD }}'
+
       - name: Apply secrets
         run: |
           ./scripts/apply-secrets.sh
