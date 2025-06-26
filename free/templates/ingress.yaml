@@ -10,7 +10,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: HostSNI(`freetj.{{ .Values.DOMAIN }}`)
+    - match: HostSNI(`free.{{ .Values.DOMAIN }}`)
       services:
         - name: trojan-{{ include "free.fullname" . }}
           port: {{ .Values.service.port }}
