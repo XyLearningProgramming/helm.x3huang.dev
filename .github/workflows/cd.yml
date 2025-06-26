@@ -21,6 +21,9 @@ jobs:
       github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     # require manual approval in GitHub → Settings → Environments → production
     environment: prod
+    # special vars injected as env instead of kubectl secrets
+    env:
+      TROJAN_PASSWORD: ${{ secrets.TROJAN_PASSWORD }}
     steps:
       # - name: Manual approval
       #   uses: trstringer/manual-approval@v1
@@ -57,10 +60,6 @@ jobs:
       - name: Write secrets db
         run: |
           echo '${{ secrets.SECRETS_DB }}' > ./secrets/db.env
-      
-      - name: Export secrets trojan
-        run: |
-          export TROJAN_PASSWORD='${{ secrets.SECRETS_TROJAN_PASSWORD }}'
 
       - name: Apply secrets
         run: |
