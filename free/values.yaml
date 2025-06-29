@@ -90,17 +90,8 @@ resources:
   #   memory: 128Mi
 
 # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-livenessProbe:
-  tcpSocket:
-    port: 443
-  initialDelaySeconds: 5
-  periodSeconds: 10
-
-readinessProbe:
-  tcpSocket:
-    port: 443
-  initialDelaySeconds: 5
-  periodSeconds: 10
+# livenessProbe: {}
+# readinessProbe: {}
 
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
