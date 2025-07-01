@@ -120,3 +120,30 @@ experimental:
     blockpath:
       moduleName: github.com/traefik/plugin-blockpath
       version: v0.2.1
+
+{{- /*
+  1. Fetch both IPv4 and IPv6 lists from Cloudflare using curl.
+  2. Split the combined output into a list of strings.
+  3. Remove any empty items from the list.
+  4. Store the result in a variable named $cloudflareIPs.
+*/ -}}
+{{- $cloudflareIPs := exec "sh" (list "-c" "curl -s https://www.cloudflare.com/ips-v4 && echo && curl -s https://www.cloudflare.com/ips-v6") | splitList "\n" | compact -}}
+
+# Traefik values generated from traefik/values.yaml.gotmpl
+---
+# Configure entrypoints to trust forwarded headers from Cloudflare
+entryPoints:
+  # Configuration for the HTTP entrypoint (e.g., 'web')
+  web:
+    forwardedHeaders:
+      # The 'toYaml' function converts our list to a YAML list format.
+      # The 'nindent 6' function indents the entire list correctly.
+      trustedIPs:
+{{ toYaml $cloudflareIPs | nindent 8 }}
+
+  # Configuration for the HTTPS entrypoint (e.g., 'websecure')
+  websecure:
+    forwardedHeaders:
+      # We reuse the same $cloudflareIPs variable here
+      trustedIPs:
+{{ toYaml $cloudflareIPs | nindent 8 }}
