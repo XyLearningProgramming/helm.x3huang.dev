@@ -129,8 +129,6 @@ experimental:
 */ -}}
 {{- $cloudflareIPs := exec "sh" (list "-c" "curl -s https://www.cloudflare.com/ips-v4 && echo && curl -s https://www.cloudflare.com/ips-v6") | splitList "\n" | compact -}}
 
-# Traefik values generated from traefik/values.yaml.gotmpl
----
 # Configure entrypoints to trust forwarded headers from Cloudflare
 entryPoints:
   # Configuration for the HTTP entrypoint (e.g., 'web')
