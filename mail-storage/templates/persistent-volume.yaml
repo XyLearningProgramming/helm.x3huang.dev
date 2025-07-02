@@ -15,7 +15,7 @@ spec:
   persistentVolumeReclaimPolicy: Delete
   storageClassName: local-mail-config
   local:
-    path: /tmp/docker-mailserver
+    path: /var/docker-mailserver
   nodeAffinity:
     required:
       nodeSelectorTerms:
