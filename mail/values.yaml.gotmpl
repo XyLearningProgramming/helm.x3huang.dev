@@ -132,3 +132,17 @@ persistent_volume_claims:
     accessModes:
       - ReadWriteOnce
     storageClass: "local-mail-log"
+
+configMaps:
+  dkim-signing.conf:
+    create: true
+    path: /etc/rspamd/override.d/dkim_signing.conf
+    data: |
+      enabled = true;
+      # Domain specific settings
+      domain {
+        {{ .Values.DOMAIN }} {
+          path = "/tmp/docker-mailserver/rspamd/dkim/rsa-2048-mail-{{ .Values.DOMAIN }}.private.txt";
+          selector = "mail";
+        }
+      }
