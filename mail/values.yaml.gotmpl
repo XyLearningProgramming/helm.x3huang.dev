@@ -134,7 +134,7 @@ persistent_volume_claims:
     storageClass: "local-mail-log"
 
 configMaps:
-  dkim_signing.conf:
+  dkim-signing.conf:
     create: true
     path: /etc/rspamd/override.d/dkim_signing.conf
     data: |
