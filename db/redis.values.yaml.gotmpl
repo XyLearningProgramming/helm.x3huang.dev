@@ -1,0 +1,153 @@
+
+# redis.values.yaml.gotmpl
+# Redis configuration optimized for <200M memory VPS
+# Must run ./scripts/apply-secrets.sh before this
+# Ref: https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
+
+global:
+  redis:
+    password: {{ exec "sh" (list "-c" "kubectl get secret --namespace db helmfile-secret-db -o jsonpath='{.data.REDIS_PASSWORD}' | base64 -d") | quote | default "****" }}
+
+# Architecture: standalone (no replication)
+architecture: standalone
+
+# Authentication using existing secret pattern
+auth:
+  enabled: true
+  existingSecret: "helmfile-secret-db"
+  existingSecretPasswordKey: "REDIS_PASSWORD"
+  usePasswordFiles: true
+  usePasswordFileFromSecret: true
+  # Support for multiple users via ACL
+  acl:
+    enabled: true
+    {{- /* Discover all REDIS_USER_<SUFFIX> keys */ -}}
+    {{- $jsonKeys := exec "sh" (list "-c" "kubectl get secret -n db helmfile-secret-db -o json | jq -r '.data | keys[] | select(startswith(\"REDIS_USER_\"))'") }}
+    {{- $userKeys := splitList "\n" ($jsonKeys | trim) }}
+    {{- if $userKeys }}
+    users:
+      {{- range $i, $uk := $userKeys }}
+      {{- if ne $uk "" }}
+      {{- $suffix := trimPrefix "REDIS_USER_" $uk }}
+      {{- $fetchUserCmd := printf "kubectl get secret -n db helmfile-secret-db -o jsonpath='{.data.REDIS_USER_%s}' | base64 -d" $suffix }}
+      {{- $fetchPassCmd := printf "kubectl get secret -n db helmfile-secret-db -o jsonpath='{.data.REDIS_PASSWORD_%s}' | base64 -d" $suffix }}
+      {{- $userVal := exec "sh" (list "-c" $fetchUserCmd) | trim }}
+      {{- $passVal := exec "sh" (list "-c" $fetchPassCmd) | trim }}
+      - username: "{{ $userVal }}"
+        password: "{{ $passVal }}"
+        enabled: "on"
+        commands: "+@all"
+        keys: "~*"
+        channels: "&*"
+      {{- end }}
+      {{- end }}
+    {{- else }}
+    users: []
+    {{- end }}
+
+# Master (standalone) configuration
+master:
+  # Resource limits for <200M memory constraint
+  resources:
+    requests:
+      memory: 32Mi
+      cpu: 50m
+    limits:
+      memory: 256Mi  # Conservative limit for your VPS
+      cpu: 200m
+  
+  # Node selection following postgres pattern
+  nodeSelector:
+    kubernetes.io/hostname: "{{ .Values.REDIS_NODE }}"
+  
+  # Persistence configuration following db-storage pattern
+  persistence:
+    enabled: true
+    storageClass: "redis-data"
+    size: "2Gi"  # Small size for VPS
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: "db-storage"
+        app.kubernetes.io/instance: "db-storage"
+  
+  # Optimized probes to save resources
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 20
+    periodSeconds: 30  # Increased from default 5s
+    timeoutSeconds: 6
+    successThreshold: 1
+    failureThreshold: 5
+  
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10  # Increased from default 5s
+    timeoutSeconds: 2
+    successThreshold: 1
+    failureThreshold: 5
+  
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 15
+
+# Disable replica since we're using standalone
+replica:
+  replicaCount: 0
+
+# Disable sentinel (not needed for standalone)
+sentinel:
+  enabled: false
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    redis: 6379
+
+# Metrics configuration for Prometheus
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 67s  # Large collection interval as requested
+    scrapeTimeout: 30s
+  resources:
+    requests:
+      memory: 4Mi
+      cpu: 10m
+    limits:
+      memory: 16Mi  # Very small for your memory constraint
+      cpu: 50m
+
+# Disable unnecessary containers
+networkPolicy:
+  enabled: false
+
+# TLS disabled to save resources
+tls:
+  enabled: false
+
+# Disable init containers if not needed
+sysctl:
+  enabled: false
+
+# Common labels and naming
+fullnameOverride: "redis"
+nameOverride: "redis"
+
+# Configuration for Redis
+commonConfiguration: |-
+  # Enable AOF https://redis.io/topics/persistence#append-only-file
+  appendonly yes
+  # Disable RDB persistence, AOF persistence already enabled.
+  save ""
+  # Redis configuration optimized for low memory
+  maxmemory 245mb
+  maxmemory-policy volatile-lru
+  # Disable some features to save memory
+  activedefrag no

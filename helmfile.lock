@@ -18,8 +18,11 @@ dependencies:
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
   version: 16.7.11
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 21.2.9
 - name: traefik
   repository: https://traefik.github.io/charts
   version: 36.0.0
-digest: sha256:8204cfc6ea0d9e554cc1da3a546a23f0cbe8e40f42fcccfbbe1394b475649fd7
-generated: '2025-06-14T10:11:42.562518996+08:00'
+digest: sha256:936c09cb83c519c12c52c8793986b08c6b92205fd4018da1b1766af45c5db4dd
+generated: '2025-07-11T17:52:26.309017703+08:00'
