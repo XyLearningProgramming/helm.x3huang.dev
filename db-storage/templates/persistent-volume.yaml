@@ -37,3 +37,43 @@ metadata:
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
 reclaimPolicy: Delete
+---
+# -----------------------------------------
+# PersistentVolume for redis
+# -----------------------------------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis-data-pv
+  labels:
+    {{- include "db-storage.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: redis-data
+  local:
+    path: /usr/local/redis/data
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ .Values.REDIS_NODE }}
+---
+# -----------------------------------------
+# StorageClasses for redis
+# -----------------------------------------
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: redis-data
+  labels:
+    {{- include "db-storage.labels" . | nindent 4 }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete

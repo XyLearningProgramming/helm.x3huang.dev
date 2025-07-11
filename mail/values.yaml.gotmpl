@@ -81,7 +81,7 @@ deployment:
     ENABLE_IMAP: "1"
     ENABLE_POP3: "1"
     ENABLE_RSPAMD: "1"
-    ENABLE_RSPAMD_REDIS: "1"
+    ENABLE_RSPAMD_REDIS: "0"
     RSPAMD_HFILTER: "1"
     RSPAMD_HFILTER_HOSTNAME_UNKNOWN_SCORE: "6"
     POSTSCREEN_ACTION: "enforce"
@@ -146,3 +146,11 @@ configMaps:
           selector = "mail";
         }
       }
+  rspamd-redis.conf:
+    create: true
+    path: /etc/rspamd/local.d/redis.conf
+    data: |
+      servers = "redis.db.svc.cluster.local:6379";
+      password = {{ exec "sh" (list "-c" "kubectl get secret --namespace db helmfile-secret-db -o jsonpath='{.data.REDIS_PASSWORD_RSPAMD}' | base64 -d") | quote | default "****" }};
+      username = "rspamd";
+      expand_keys = true;

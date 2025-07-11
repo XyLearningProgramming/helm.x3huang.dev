@@ -140,6 +140,16 @@ releases:
       - name: crds.enabled
         value: false
 
+# Redis stack
+  - name: redis
+    namespace: db
+    chart: bitnami/redis
+    needs:
+      - db/db-storage
+    values:
+      - values/{{ .Environment.Name }}.yaml.gotmpl
+      - db/redis.values.yaml.gotmpl
+
 # Mail Server
   - name: mailserver
     namespace: mail
@@ -154,6 +164,7 @@ releases:
       - cert-manager/cert-manager
       - kube-system/traefik
       - mail/mail-storage
+      - db/redis
     values:
       - values/{{ .Environment.Name }}.yaml.gotmpl
       - mail/values.yaml.gotmpl
