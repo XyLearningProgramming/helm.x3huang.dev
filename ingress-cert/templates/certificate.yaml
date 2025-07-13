@@ -14,6 +14,7 @@ spec:
     - smtp.{{ .Values.DOMAIN }}
     - imap.{{ .Values.DOMAIN }}
     - free.{{ .Values.DOMAIN }}
+    - goatcounter.{{ .Values.DOMAIN }}
   issuerRef:
     name: {{ .Values.ISSUER_NAME }}
     kind: ClusterIssuer
