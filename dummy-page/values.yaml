@@ -136,9 +136,9 @@ html:
     </html>
 
 resources:
-  # requests:
-  #   memory: "64Mi"
-  #   cpu: "50m"
+  requests:
+    memory: "8Mi"
+    cpu: "5m"
   limits:
     memory: "64Mi" # (64 MiB)
     cpu: "50m" # (0.05 vCPU)

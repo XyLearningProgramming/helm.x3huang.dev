@@ -20,13 +20,6 @@ auth:
     adminPasswordKey: "POSTGRES_PASSWORD"
     userPasswordKey: "USER_PASSWORD"
 
-resources:
-  requests:
-    memory: 64Mi
-  limits:
-    cpu: 1
-    memory: 512Mi
-
 # TODO (xinyu): mount secret as file to create multiple users.
 # eg. CREATE USER app1 WITH PASSWORD pg_read_file('/opt/bitnami/postgresql/secrets/app1-password');
 # 
@@ -54,7 +47,8 @@ primary:
         app.kubernetes.io/instance: "db-storage"
   resources:
     requests:
-      memory: 64Mi
+      cpu: 50m
+      memory: 32Mi
     limits:
       cpu: 500m
       memory: 512Mi
@@ -116,6 +110,7 @@ metrics:
     interval: 67s
   resources:
     requests:
+      cpu: 5m
       memory: 4Mi
     limits:
       cpu: 50m
