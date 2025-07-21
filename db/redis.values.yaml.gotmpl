@@ -50,11 +50,11 @@ master:
   # Resource limits for <200M memory constraint
   resources:
     requests:
-      memory: 32Mi
       cpu: 50m
+      memory: 32Mi
     limits:
-      memory: 256Mi  # Conservative limit for your VPS
       cpu: 200m
+      memory: 256Mi  # Conservative limit for your VPS
   
   # Node selection following postgres pattern
   nodeSelector:

@@ -54,6 +54,7 @@ releases:
             cpu: 50m
             memory: 64Mi
           requests:
+            cpu: 5m
             memory: 8Mi
         args:
           - -resync-period=5m
@@ -74,6 +75,9 @@ releases:
           limits:
             cpu: "200m"  # (0.2 vCPU)
             memory: "256Mi"  # (256 MiB)
+          requests:
+            cpu: 5m
+            memory: 8Mi
     set:
       # one time install crd first
       # kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
