@@ -54,7 +54,7 @@ master:
       memory: 32Mi
     limits:
       cpu: 200m
-      memory: 256Mi  # Conservative limit for your VPS
+      memory: 128Mi
   
   # Node selection following postgres pattern
   nodeSelector:
@@ -147,7 +147,7 @@ commonConfiguration: |-
   # Disable RDB persistence, AOF persistence already enabled.
   save ""
   # Redis configuration optimized for low memory
-  maxmemory 245mb
+  maxmemory 64mb
   maxmemory-policy volatile-lru
   # Disable some features to save memory
   activedefrag no

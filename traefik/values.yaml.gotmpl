@@ -6,6 +6,14 @@
   #   prometheus.io/port: "8082"
   #   prometheus.io/scrape: "true"
 
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 300m
+    memory: 256Mi
+
 priorityClassName: "system-cluster-critical"
 
 image:

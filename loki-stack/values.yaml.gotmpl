@@ -67,11 +67,11 @@ promtail:
 
   resources:
     requests:
-      cpu: "50m"
-      memory: "64Mi"
+      cpu: "10m"
+      memory: "32Mi"
     limits:
-      cpu: "500m"
-      memory: "512Mi"
+      cpu: "100m"
+      memory: "128Mi"
 
   # Mount your existing Secret into the Promtail pod
   extraVolumes:
