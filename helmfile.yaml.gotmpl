@@ -74,10 +74,26 @@ releases:
       - resources:
           limits:
             cpu: "200m"  # (0.2 vCPU)
-            memory: "256Mi"  # (256 MiB)
+            memory: "128Mi"
           requests:
             cpu: 5m
             memory: 8Mi
+      - webhook:
+          resources:
+            limits:
+              cpu: "50m"
+              memory: "64Mi"
+            requests:
+              cpu: 5m
+              memory: 8Mi
+      - cainjector:
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "192Mi"
+            requests:
+              cpu: 5m
+              memory: 16Mi
     set:
       # one time install crd first
       # kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml

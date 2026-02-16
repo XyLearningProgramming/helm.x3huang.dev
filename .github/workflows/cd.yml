@@ -101,6 +101,8 @@ jobs:
       - name: Dry‑run (Diff) before Apply
         uses: helmfile/helmfile-action@v2.0.4
         with:
+          helmfile-version: 'v1.0.0'
+          helm-version: 'v3.17.3'
           helmfile-args: diff --environment prod --detailed-exitcode
         continue-on-error: true
         # This acts as a dry‑run check :contentReference[oaicite:9]{index=9}
@@ -108,5 +110,7 @@ jobs:
       - name: Apply Changes
         uses: helmfile/helmfile-action@v2.0.4
         with:
+          helmfile-version: 'v1.0.0'
+          helm-version: 'v3.17.3'
           helmfile-args: apply --environment prod
         # performs actual sync if diff detected :contentReference[oaicite:10]{index=10}

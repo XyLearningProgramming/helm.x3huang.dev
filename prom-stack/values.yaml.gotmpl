@@ -1,3 +1,21 @@
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 96Mi
+
 grafana:
   enabled: false
 
@@ -52,6 +70,13 @@ coreDns:
 # 
 # Enable node exporter to collect host metrics
 prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
   prometheus:
     monitor:
       enabled: true
@@ -81,12 +106,12 @@ prometheus:
     labelNameLengthLimit: 1024  # Maximum length of label names
     labelValueLengthLimit: 2048 # Maximum length of label values
     resources:
-      requests: # Good practice
-        memory: "256Mi"
-        cpu: "200m" # 0.2 CPU
+      requests:
+        memory: "200Mi"
+        cpu: "100m"
       limits:
-        memory: "512Mi"  # Start with 0.5Gi, monitor and adjust
-        cpu: "500m"       # Start with 0.5 CPU, monitor and adjust
+        memory: "384Mi"
+        cpu: "500m"
     remoteWrite:
       - url: https://prometheus-prod-37-prod-ap-southeast-1.grafana.net/api/prom/push
         remoteTimeout: 3m
