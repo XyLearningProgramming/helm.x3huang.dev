@@ -95,6 +95,9 @@ primary:
         -- 4. Grant privileges inside the new database
         \connect "{{ $dbVal }}"
         GRANT ALL PRIVILEGES ON SCHEMA public TO "{{ $userVal }}";
+
+        -- 5. Enable pgvector extension (requires superuser)
+        CREATE EXTENSION IF NOT EXISTS vector;
       {{- end }}
       {{- end }}
 
