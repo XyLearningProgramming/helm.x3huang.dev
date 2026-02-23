@@ -8,6 +8,8 @@ image:
   tag: 17.5.0
 
 global:
+  security:
+    allowInsecureImages: true
   postgresql:
     # Must run ./scripts/apply-secrets.sh before this
     auth:
