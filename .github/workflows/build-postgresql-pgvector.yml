@@ -9,6 +9,9 @@ on:
       bitnami_tag:
         description: "Bitnami postgresql image tag"
         default: "17.5.0-debian-12-r11"
+      bitnami_registry:
+        description: "Bitnami image registry (bitnami or bitnamilegacy)"
+        default: "bitnamilegacy"
 
 jobs:
   build-and-push:
@@ -36,6 +39,7 @@ jobs:
           build-args: |
             PG_MAJOR=${{ inputs.pg_major }}
             BITNAMI_TAG=${{ inputs.bitnami_tag }}
+            BITNAMI_REGISTRY=${{ inputs.bitnami_registry }}
           tags: |
             ${{ secrets.SECRETS_DOCKERHUB_USERNAME }}/postgresql-pgvector:${{ steps.meta.outputs.pg_version }}
             ${{ secrets.SECRETS_DOCKERHUB_USERNAME }}/postgresql-pgvector:${{ inputs.bitnami_tag }}
