@@ -116,6 +116,15 @@ releases:
       - name: Environment
         value: {{ .Environment.Name }}
 
+# Backend namespace: TLS secret replication
+  - name: backend
+    namespace: backend
+    chart: ./backend
+    needs:
+      - cert-manager/ingress
+    values:
+      - values/{{ .Environment.Name }}.yaml.gotmpl
+
 # Dummy Service
   - name: dummy-page
     namespace: default
