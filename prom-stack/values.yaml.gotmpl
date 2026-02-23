@@ -8,6 +8,15 @@ prometheusOperator:
       memory: 128Mi
 
 kube-state-metrics:
+  collectors:
+    - pods
+    - nodes
+    - deployments
+    - namespaces
+    - statefulsets
+    - daemonsets
+    - persistentvolumeclaims
+    - persistentvolumes
   resources:
     requests:
       cpu: 5m
@@ -134,16 +143,25 @@ prometheus:
           {{- $dropPrefixes := list 
               "apiserver"
               "container_blkio"
+              "container_memory_failures"
               "etcd"
+              "kubeproxy"
+              "kubelet_http"
               "kubelet_runtime_operations"
+              "kubernetes_feature"
               "lasso_controller"
               "prober_probe"
+              "rest_client"
               "scheduler"
               "storage_operation"
+              "volume_operation"
               "workqueue"
           }}
           - sourceLabels: ["__name__"]
             regex: {{ printf "^(?:%s)_.*" (join "|" $dropPrefixes) }}
+            action: drop
+          - sourceLabels: ["__name__"]
+            regex: "kube_pod_status_(phase|reason)"
             action: drop
           # Reduce cardinality of labels that don't make sense to dashboards.
           - regex: "uid"
@@ -153,6 +171,8 @@ prometheus:
           - regex: "id"
             action: labeldrop
           - regex: "crd"
+            action: labeldrop
+          - regex: "name"
             action: labeldrop
           - targetLabel: domain
             replacement: {{ .Values | get "DOMAIN" }}

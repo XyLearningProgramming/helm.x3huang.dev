@@ -51,7 +51,12 @@ primary:
       memory: 32Mi
     limits:
       cpu: 500m
-      memory: 512Mi
+      memory: 256Mi
+  # Clients: chatty (pool 1+1), goatcounter (~5), pg_exporter (1), admin.
+  # Default max_connections=100 wastes ~5-10 MB per idle slot.
+  extendedConfiguration: |-
+    max_connections = 20
+    shared_buffers = 48MB
   initdb:
     user: "postgres"
     password: {{ exec "sh" (list "-c" "kubectl get secret -n db helmfile-secret-db -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d") | quote | default "****" }}
