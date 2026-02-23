@@ -1,4 +1,12 @@
 # postgres.values.yaml.gotmpl
+
+# Custom image: bitnami/postgresql + pgvector (compiled with portable OPTFLAGS).
+# Built by .github/workflows/build-postgresql-pgvector.yml
+image:
+  registry: docker.io
+  repository: x3huang/postgresql-pgvector
+  tag: 17.5.0
+
 global:
   postgresql:
     # Must run ./scripts/apply-secrets.sh before this

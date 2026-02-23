@@ -1,0 +1,41 @@
+name: Build PostgreSQL pgvector
+
+on:
+  workflow_dispatch:
+    inputs:
+      pg_major:
+        description: "PostgreSQL major version"
+        default: "17"
+      bitnami_tag:
+        description: "Bitnami postgresql image tag"
+        default: "17.5.0-debian-12-r11"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.SECRETS_DOCKERHUB_USERNAME }}
+          password: ${{ secrets.SECRETS_DOCKERHUB_TOKEN }}
+
+      - name: Extract version tag
+        id: meta
+        run: |
+          bitnami_tag="${{ inputs.bitnami_tag }}"
+          echo "pg_version=${bitnami_tag%%-*}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: db/postgresql-pgvector
+          push: true
+          build-args: |
+            PG_MAJOR=${{ inputs.pg_major }}
+            BITNAMI_TAG=${{ inputs.bitnami_tag }}
+          tags: |
+            ${{ secrets.SECRETS_DOCKERHUB_USERNAME }}/postgresql-pgvector:${{ steps.meta.outputs.pg_version }}
+            ${{ secrets.SECRETS_DOCKERHUB_USERNAME }}/postgresql-pgvector:${{ inputs.bitnami_tag }}
