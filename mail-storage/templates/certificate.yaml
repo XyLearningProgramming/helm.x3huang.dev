@@ -1,9 +1,11 @@
 # Certificate copied from cert-manager to avoid duplicate requests to acme server.
 # Ref: https://github.com/mittwald/kubernetes-replicator
+{{- $secretName := printf "mail-%s-tls" .Values.DOMAIN }}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $secretName }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: mail-{{ .Values.DOMAIN }}-tls
+  name: {{ $secretName }}
   namespace: {{ .Release.Namespace }}
   annotations:
     replicator.v1.mittwald.de/replicate-from: cert-manager/{{ .Values.DOMAIN }}-tls
@@ -11,9 +13,9 @@ metadata:
     {{- include "mail-storage.labels" . | nindent 4 }}
 type: kubernetes.io/tls
 data:
-  tls.key: ""
-  tls.crt: ""
-  ca.crt: ""
+  tls.key: {{ if $existing }}{{ index $existing.data "tls.key" }}{{ else }}""{{ end }}
+  tls.crt: {{ if $existing }}{{ index $existing.data "tls.crt" }}{{ else }}""{{ end }}
+  ca.crt: {{ if $existing }}{{ index $existing.data "ca.crt" | default "" }}{{ else }}""{{ end }}
 
 # # Deprecated:
 # 
