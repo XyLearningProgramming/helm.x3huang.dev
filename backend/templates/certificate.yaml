@@ -1,17 +1,19 @@
 # TLS certificate replicated from cert-manager namespace.
 # Ref: https://github.com/mittwald/kubernetes-replicator
+{{- $secretName := printf "%s-tls" .Values.DOMAIN }}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $secretName }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .Values.DOMAIN }}-tls
+  name: {{ $secretName }}
   namespace: {{ .Release.Namespace }}
   annotations:
-    replicator.v1.mittwald.de/replicate-from: cert-manager/{{ .Values.DOMAIN }}-tls
+    replicator.v1.mittwald.de/replicate-from: cert-manager/{{ $secretName }}
   labels:
     app.kubernetes.io/name: backend
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 type: kubernetes.io/tls
 data:
-  tls.key: ""
-  tls.crt: ""
-  ca.crt: ""
+  tls.key: {{ if $existing }}{{ index $existing.data "tls.key" }}{{ else }}""{{ end }}
+  tls.crt: {{ if $existing }}{{ index $existing.data "tls.crt" }}{{ else }}""{{ end }}
+  ca.crt: {{ if $existing }}{{ index $existing.data "ca.crt" | default "" }}{{ else }}""{{ end }}
