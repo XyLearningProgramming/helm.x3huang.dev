@@ -3,7 +3,7 @@
 certificate: "mail-{{ .Values.DOMAIN }}-tls"
 
 deployment:
-  podAnnotations:
+  annotations:
     secret.reloader.stakater.com/reload: "mail-{{ .Values.DOMAIN }}-tls"
   nodeSelector:
     kubernetes.io/hostname: {{ .Values.EMAIL_NODE }}
