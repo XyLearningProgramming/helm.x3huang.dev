@@ -3,6 +3,8 @@
 certificate: "mail-{{ .Values.DOMAIN }}-tls"
 
 deployment:
+  podAnnotations:
+    secret.reloader.stakater.com/reload: "mail-{{ .Values.DOMAIN }}-tls"
   nodeSelector:
     kubernetes.io/hostname: {{ .Values.EMAIL_NODE }}
   # Initialize mail configuration using initContainer
