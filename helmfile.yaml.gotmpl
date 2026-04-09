@@ -29,6 +29,8 @@ repositories:
     url: https://helm.mittwald.de
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
+  - name: stakater
+    url: https://stakater.github.io/stakater-charts
 ---
 releases:
 # Traefik: replace the default k3s traefik with explicit config
@@ -58,6 +60,23 @@ releases:
             memory: 8Mi
         args:
           - -resync-period=5m
+
+# Reloader: restart pods when their mounted Secrets change (e.g. after TLS renewal)
+  - name: reloader
+    namespace: kube-system
+    chart: stakater/reloader
+    version: "2.2.9"
+    values:
+      - reloader:
+          watchGlobally: true
+          deployment:
+            resources:
+              requests:
+                cpu: 5m
+                memory: 8Mi
+              limits:
+                cpu: 30m
+                memory: 64Mi
 
 # Cert-Manager Chart
   - name: cert-manager
@@ -192,6 +211,7 @@ releases:
     needs:
       - cert-manager/cert-manager
       - kube-system/traefik
+      - kube-system/reloader
       - mail/mail-storage
       - db/redis
     values:
@@ -233,5 +253,7 @@ releases:
     chart: ./free
     needs:
       - cert-manager/ingress
+      - kube-system/reloader
     values:
       - values/{{ .Environment.Name }}.yaml.gotmpl
+      - free/values.yaml.gotmpl
