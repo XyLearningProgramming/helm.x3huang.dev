@@ -2,27 +2,30 @@ version: 1.0.0
 dependencies:
 - name: cert-manager
   repository: https://charts.jetstack.io
-  version: v1.11.0
+  version: v1.20.5
 - name: docker-mailserver
   repository: https://docker-mailserver.github.io/docker-mailserver-helm/
-  version: 4.2.1
+  version: 6.0.0
 - name: kube-prometheus-stack
   repository: https://prometheus-community.github.io/helm-charts
-  version: 72.6.3
+  version: 93.9.0
 - name: kubernetes-replicator
   repository: https://helm.mittwald.de
-  version: 2.5.1
+  version: 2.12.6
 - name: loki-stack
   repository: https://grafana.github.io/helm-charts
-  version: 2.10.2
+  version: 2.10.3
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
   version: 16.7.11
 - name: redis
   repository: https://charts.bitnami.com/bitnami
-  version: 21.2.9
+  version: 28.3.16
+- name: reloader
+  repository: https://stakater.github.io/stakater-charts
+  version: 2.2.21
 - name: traefik
   repository: https://traefik.github.io/charts
-  version: 36.0.0
-digest: sha256:936c09cb83c519c12c52c8793986b08c6b92205fd4018da1b1766af45c5db4dd
-generated: '2025-07-11T17:52:26.309017703+08:00'
+  version: 42.4.2
+digest: sha256:95c1124f8b3ddd0696eb8dc42d7f0675419db507b9f9ea5425eac36758a04df4
+generated: '2026-11-24T12:12:19.595651+08:00'
