@@ -18,7 +18,7 @@ priorityClassName: "system-cluster-critical"
 
 image:
   repository: "rancher/mirrored-library-traefik"
-  tag: "3.3.6"
+  tag: "3.7.19"
 
 tolerations:
   - key: "CriticalAddonsOnly"
@@ -29,9 +29,6 @@ tolerations:
   - key: "node-role.kubernetes.io/master"
     operator: "Exists"
     effect: "NoSchedule"
-
-service:
-  ipFamilyPolicy: "PreferDualStack"
 
 additionalArguments:
   - "--log.level=DEBUG"

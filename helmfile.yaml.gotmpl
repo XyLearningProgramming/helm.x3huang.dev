@@ -37,12 +37,17 @@ releases:
   - name: traefik
     namespace: kube-system
     chart: traefik/traefik
-    version: 36.0.0
+    version: 42.4.2
     # Traefik crds ref: https://github.com/traefik/traefik-helm-chart
     #
-    # helm install traefik-crds traefik/traefik-crds
+    # NOTE: traefik-crds must be updated to match Traefik v3.7 (the chart below
+    # pins image tag 3.7.19) before/with this upgrade:
+    #   helm upgrade traefik-crds traefik/traefik-crds --namespace kube-system
+    # or apply the CRD manifest from the v3.7.19 release:
+    #   https://github.com/traefik/traefik/releases/tag/v3.7.19
     values:
-      - values/{{ .Environment.Name }}.yaml.gotmpl
+      # Chart 42.x has a strict values schema; do not pass the shared
+      # environment values (DOMAIN, *_NODE, ...) that traefik does not consume.
       - traefik/values.yaml.gotmpl
 
 # Replicator: copy tls secrets to different ns
