@@ -54,7 +54,7 @@ releases:
   - name: kubernetes-replicator
     namespace: kube-system                # where you want the controller to live
     chart: mittwald/kubernetes-replicator
-    version: "2.5.1"                      # pin to a specific chart version if you like
+    version: "2.12.6"                     # pin to a specific chart version if you like
     values:
       - resources:
           limits:
@@ -70,7 +70,7 @@ releases:
   - name: reloader
     namespace: kube-system
     chart: stakater/reloader
-    version: "2.2.9"
+    version: "2.2.21"
     values:
       - reloader:
           watchGlobally: true
@@ -231,7 +231,7 @@ releases:
     chart: grafana/loki-stack
     needs:
       - kube-system/traefik
-    version: "2.10.2"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
+    version: "2.10.3"
     values:
       - values/{{ .Environment.Name }}.yaml.gotmpl
       - loki-stack/values.yaml.gotmpl
