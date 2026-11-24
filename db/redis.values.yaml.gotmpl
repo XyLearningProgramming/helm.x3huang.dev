@@ -4,7 +4,24 @@
 # Must run ./scripts/apply-secrets.sh before this
 # Ref: https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
 
+# Bitnami image registry situation (2025+):
+# - Bitnami moved to "Bitnami Secure Images" (BSI). Versioned tags (e.g.
+#   `8.0.3-debian-12-r1`) are no longer freely available in docker.io/bitnami;
+#   they now require a BSI subscription. The old bitnamilegacy registry is
+#   frozen at Redis 8.2.1, which still has open 2026 CVEs.
+# - The free path is the unversioned `latest` tag, pinned by digest here so the
+#   image is immutable/reproducible while tracking a current, fixed Redis.
+# - `allowInsecureImages` is required because Bitnami's image verification
+#   rejects non-versioned tags (digest or not).
+image:
+  registry: docker.io
+  repository: bitnami/redis
+  tag: latest
+  digest: "sha256:9e890edb5ed8d170d58dd65a6ba1bc6bb515f2de08135b855bbb5d5bb2d067c6"
+
 global:
+  security:
+    allowInsecureImages: true
   redis:
     password: {{ exec "sh" (list "-c" "kubectl get secret --namespace db helmfile-secret-db -o jsonpath='{.data.REDIS_PASSWORD}' | base64 -d") | quote | default "****" }}
 
@@ -47,6 +64,13 @@ auth:
 
 # Master (standalone) configuration
 master:
+  # Service configuration (chart 28.x moved the top-level `service` key
+  # under `master.service` / `replica.service`).
+  service:
+    type: ClusterIP
+    ports:
+      redis: 6379
+
   # Resource limits for <200M memory constraint
   resources:
     requests:
@@ -102,12 +126,6 @@ replica:
 # Disable sentinel (not needed for standalone)
 sentinel:
   enabled: false
-
-# Service configuration
-service:
-  type: ClusterIP
-  ports:
-    redis: 6379
 
 # Metrics configuration for Prometheus
 metrics:
