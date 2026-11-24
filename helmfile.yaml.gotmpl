@@ -87,13 +87,14 @@ releases:
   - name: cert-manager
     namespace: cert-manager
     chart: jetstack/cert-manager
-    version: v1.11.0
+    version: v1.20.5
     needs:
       - kube-system/traefik
       - kube-system/kubernetes-replicator
     installed: true
     values:
-      - values/{{ .Environment.Name }}.yaml.gotmpl
+      # Chart v1.20.x has a strict values schema; do not pass the shared
+      # environment values (DOMAIN, *_NODE, ...) that cert-manager does not consume.
       - namespace: cert-manager
       - resources:
           limits:
@@ -120,8 +121,8 @@ releases:
               memory: 16Mi
     set:
       # one time install crd first
-      # kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
-      - name: installCRDs
+      # kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.5/cert-manager.crds.yaml
+      - name: crds.enabled
         value: false
       - name: prometheus.enabled
         value: false
