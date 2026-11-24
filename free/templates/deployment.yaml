@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: trojan-{{ include "free.fullname" . }}
+  name: singbox-{{ include "free.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "free.labels" . | nindent 4 }}
@@ -11,7 +11,7 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: trojan-{{ include "free.name" . }}
+      app.kubernetes.io/name: singbox-{{ include "free.name" . }}
       {{- include "free.selectorLabels" . | nindent 6 }}
   template:
     metadata:
@@ -20,7 +20,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        app.kubernetes.io/name: trojan-{{ include "free.name" . }}
+        app.kubernetes.io/name: singbox-{{ include "free.name" . }}
         {{- include "free.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
@@ -68,9 +68,13 @@ spec:
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - run
+            - -c
+            - /etc/sing-box/config.json
           ports:
             - name: {{ .Values.service.portName }}
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.service.containerPort }}
               protocol: {{ .Values.service.protocol }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
@@ -89,7 +93,7 @@ spec:
               mountPath: "/etc/tls/"
               readOnly: true
             - name: patched-config
-              mountPath: "/config/"
+              mountPath: "/etc/sing-box/"
       volumes:
         - name: tls
           secret:
@@ -99,7 +103,7 @@ spec:
           emptyDir: {}
         - name: raw-config
           configMap:
-            name: trojan-config
+            name: singbox-config
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
