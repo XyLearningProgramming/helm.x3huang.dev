@@ -7,11 +7,18 @@ k3s's helm-controller is the single owner of the release. The helmfile
 
 ## Migration
 
-1. Copy `traefik/HelmChartConfig-migration.yaml` to the k3s **server** node at
-   `/var/lib/rancher/k3s/server/manifests/traefik-config.yaml` **before**
-   merging the PR that removes the helmfile traefik release. k3s's controller
-   will then deploy Traefik with the full config as it takes over.
-2. Merge the PR and remove the old helmfile-managed release from the cluster.
+1. Merge the PR that removes the helmfile `traefik` release. The already-running
+   helm release (36.0.0) stays up as an orphan; helmfile no longer touches it.
+2. Upgrade k3s 1.32 → 1.37.2 one minor at a time. The first k3s version change
+   re-applies the bundled `traefik` HelmChart, and k3s's helm-controller becomes
+   the owner of the release. The existing (mail-ports) `HelmChartConfig` keeps
+   mail working throughout.
+3. After k3s reaches 1.37.2, copy `traefik/HelmChartConfig-migration.yaml` to
+   the k3s **server** node at
+   `/var/lib/rancher/k3s/server/manifests/traefik-config.yaml` (or
+   `kubectl apply` it). It supersedes the mail-only HelmChartConfig. k3s re-runs
+   the deploy job with the full config (resources, tolerations, metrics,
+   Cloudflare trusted IPs, mail ports).
 
 ## Notes
 

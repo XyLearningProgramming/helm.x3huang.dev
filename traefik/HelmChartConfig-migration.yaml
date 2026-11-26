@@ -3,8 +3,11 @@
 # Install on the k3s SERVER node at:
 #   /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
 #
-# Merge order note: apply BEFORE merging the PR that removes the helmfile
-# traefik release, so k3s's controller deploys with full config when it takes over.
+# Merge order note (decision locked 2026-11-25): apply AFTER k3s reaches
+# v1.37.2, NOT before. Applying it earlier re-runs k3s's old bundled-chart job
+# (chart 34.2.1 on k3s 1.32) and downgrades the release for no benefit; the
+# existing mail-ports HelmChartConfig keeps mail working in the meantime.
+# This manifest supersedes that mail-only config (it carries the same ports).
 #
 # Cloudflare trusted IPs below are hardcoded (HelmChartConfig is static, no
 # templating). Refresh periodically from:
