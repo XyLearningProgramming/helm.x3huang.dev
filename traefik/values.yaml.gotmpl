@@ -1,3 +1,6 @@
+# DEPRECATED — no longer consumed by helmfile (k3s owns Traefik).
+# Kept as the SOURCE OF TRUTH for migrating values into the k3s HelmChartConfig;
+# see traefik/HelmChartConfig-migration.yaml.
 
 # deployment:
   # Use ServiceMonitor instead
@@ -18,7 +21,7 @@ priorityClassName: "system-cluster-critical"
 
 image:
   repository: "rancher/mirrored-library-traefik"
-  tag: "3.7.19"
+  tag: "3.3.6"
 
 tolerations:
   - key: "CriticalAddonsOnly"
@@ -29,6 +32,9 @@ tolerations:
   - key: "node-role.kubernetes.io/master"
     operator: "Exists"
     effect: "NoSchedule"
+
+service:
+  ipFamilyPolicy: "PreferDualStack"
 
 additionalArguments:
   - "--log.level=DEBUG"

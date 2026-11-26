@@ -33,22 +33,8 @@ repositories:
     url: https://stakater.github.io/stakater-charts
 ---
 releases:
-# Traefik: replace the default k3s traefik with explicit config
-  - name: traefik
-    namespace: kube-system
-    chart: traefik/traefik
-    version: 42.4.2
-    # Traefik crds ref: https://github.com/traefik/traefik-helm-chart
-    #
-    # NOTE: traefik-crds must be updated to match Traefik v3.7 (the chart below
-    # pins image tag 3.7.19) before/with this upgrade:
-    #   helm upgrade traefik-crds traefik/traefik-crds --namespace kube-system
-    # or apply the CRD manifest from the v3.7.19 release:
-    #   https://github.com/traefik/traefik/releases/tag/v3.7.19
-    values:
-      # Chart 42.x has a strict values schema; do not pass the shared
-      # environment values (DOMAIN, *_NODE, ...) that traefik does not consume.
-      - traefik/values.yaml.gotmpl
+# Traefik is owned by k3s (HelmChart + HelmChartConfig in kube-system).
+# Do not manage it here. See traefik/README.md.
 
 # Replicator: copy tls secrets to different ns
   - name: kubernetes-replicator
@@ -89,7 +75,6 @@ releases:
     chart: jetstack/cert-manager
     version: v1.20.5
     needs:
-      - kube-system/traefik
       - kube-system/kubernetes-replicator
     installed: true
     values:
@@ -171,8 +156,6 @@ releases:
   - name: kube-prom-stack
     namespace: monitoring
     chart: prometheus-community/kube-prometheus-stack
-    needs:
-      - kube-system/traefik
     version: "93.9.0"
     # install crds
     # 
@@ -217,7 +200,6 @@ releases:
     # 
     needs:
       - cert-manager/cert-manager
-      - kube-system/traefik
       - kube-system/reloader
       - mail/mail-storage
       - db/redis
@@ -229,8 +211,6 @@ releases:
   - name: loki-stack
     namespace: monitoring
     chart: grafana/loki-stack
-    needs:
-      - kube-system/traefik
     version: "2.10.3"
     values:
       - values/{{ .Environment.Name }}.yaml.gotmpl

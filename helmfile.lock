@@ -24,8 +24,5 @@ dependencies:
 - name: reloader
   repository: https://stakater.github.io/stakater-charts
   version: 2.2.21
-- name: traefik
-  repository: https://traefik.github.io/charts
-  version: 42.4.2
-digest: sha256:95c1124f8b3ddd0696eb8dc42d7f0675419db507b9f9ea5425eac36758a04df4
-generated: '2026-11-24T12:12:19.595651+08:00'
+digest: sha256:6edb2a4998fdd88b7aa7ef47b98237d54e3b6e98231ce68a84043f9a719c3d1e
+generated: '2026-11-26T11:12:59.011925+08:00'
