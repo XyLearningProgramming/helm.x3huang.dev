@@ -1,33 +1,31 @@
 # Traefik (owned by k3s)
 
-Traefik is no longer managed by helmfile. k3s installs and upgrades Traefik via
-its bundled HelmChart (`traefik`) and the `HelmChartConfig` in `kube-system`;
-k3s's helm-controller is the single owner of the release. The helmfile
-`traefik` release is removed.
+Traefik is installed and upgraded by **k3s itself** via the bundled `HelmChart`
+(`traefik` + `traefik-crd`) and the `HelmChartConfig` in `kube-system`.
+k3s's helm-controller is the single owner of the release. **helmfile does not
+manage Traefik** — there is deliberately no `traefik` release in
+`helmfile.yaml.gotmpl`, and the `traefik` chart repository is not declared.
 
-## Migration
+## Steady state
 
-1. Merge the PR that removes the helmfile `traefik` release. The already-running
-   helm release (36.0.0) stays up as an orphan; helmfile no longer touches it.
-2. Upgrade k3s 1.32 → 1.37.2 one minor at a time. The first k3s version change
-   re-applies the bundled `traefik` HelmChart, and k3s's helm-controller becomes
-   the owner of the release. The existing (mail-ports) `HelmChartConfig` keeps
-   mail working throughout.
-3. After k3s reaches 1.37.2, copy `traefik/HelmChartConfig-migration.yaml` to
-   the k3s **server** node at
-   `/var/lib/rancher/k3s/server/manifests/traefik-config.yaml` (or
-   `kubectl apply` it). It supersedes the mail-only HelmChartConfig. k3s re-runs
-   the deploy job with the full config (resources, tolerations, metrics,
-   Cloudflare trusted IPs, mail ports).
+- `HelmChartConfig.yaml` is the **canonical copy** of the values applied on the
+  k3s **server** node. To change Traefik settings: edit that file, then
+  `kubectl apply -f traefik/HelmChartConfig.yaml` (or copy it to
+  `/var/lib/rancher/k3s/server/manifests/traefik-config.yaml` on the server).
+- k3s version changes re-apply the bundled chart; these values are merged on
+  top and survive k3s upgrades.
 
 ## Notes
 
-- k3s 1.37.2 bundles chart 42.x / Traefik 3.7.15.
-- `traefik/values.yaml.gotmpl` is deprecated (no longer consumed by helmfile)
-  but kept as the source of truth for the values mirrored into the
-  HelmChartConfig.
-- To pin a different Traefik image, set `image.tag` (e.g. `"3.7.19"`) in the
-  HelmChartConfig `valuesContent`.
-- The Cloudflare `forwardedHeaders.trustedIPs` lists in the HelmChartConfig are
-  static; refresh them periodically from
+- k3s 1.37.2 bundles chart 42.x / Traefik 3.7.15. To pin a different image,
+  set `image.tag` (e.g. `"3.7.19"`) in the HelmChartConfig `valuesContent`.
+- The Cloudflare `forwardedHeaders.trustedIPs` lists in the HelmChartConfig
+  are static; refresh them periodically from
   <https://www.cloudflare.com/ips-v4> and <https://www.cloudflare.com/ips-v6>.
+- The dead `traefik:` block that historically sat in
+  `/etc/rancher/k3s/config.yaml` was removed during the 2026-11 cleanup — k3s
+  never consumed it; live values come only from the HelmChartConfig.
+- The pre-migration helmfile values (`traefik/values.yaml.gotmpl`) were removed
+  after the migration completed; git history retains them if ever needed.
+- `traefik-dashboard/` is an on-demand debug helper (Ingress + Service +
+  apply script), intentionally not part of any chart.

@@ -1,13 +1,19 @@
-# HelmChartConfig for the Traefik instance bundled with k3s.
+# HelmChartConfig for the Traefik instance bundled with k3s — CANONICAL COPY.
 #
-# Install on the k3s SERVER node at:
-#   /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
+# k3s's helm-controller is the single owner of the traefik release (since the
+# 2026-11 migration; helmfile no longer manages Traefik). This file is the
+# source of truth for the values applied on the k3s SERVER node.
 #
-# Merge order note (decision locked 2026-11-25): apply AFTER k3s reaches
-# v1.37.2, NOT before. Applying it earlier re-runs k3s's old bundled-chart job
-# (chart 34.2.1 on k3s 1.32) and downgrades the release for no benefit; the
-# existing mail-ports HelmChartConfig keeps mail working in the meantime.
-# This manifest supersedes that mail-only config (it carries the same ports).
+# To change Traefik settings: edit this file, then apply it on the server —
+#   kubectl apply -f traefik/HelmChartConfig.yaml
+# or drop it into /var/lib/rancher/k3s/server/manifests/traefik-config.yaml.
+# k3s re-merges these values over the bundled chart defaults and re-runs the
+# deploy job; values survive k3s version upgrades.
+#
+# Cloudflare trusted IPs below are hardcoded (HelmChartConfig is static, no
+# templating). Refresh periodically from:
+#   https://www.cloudflare.com/ips-v4
+#   https://www.cloudflare.com/ips-v6
 #
 # Cloudflare trusted IPs below are hardcoded (HelmChartConfig is static, no
 # templating). Refresh periodically from:

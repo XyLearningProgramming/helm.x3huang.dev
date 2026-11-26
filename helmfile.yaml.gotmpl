@@ -23,8 +23,6 @@ repositories:
     url: https://docker-mailserver.github.io/docker-mailserver-helm/
   - name: grafana
     url: https://grafana.github.io/helm-charts
-  - name: traefik
-    url: https://traefik.github.io/charts
   - name: mittwald
     url: https://helm.mittwald.de
   - name: bitnami
@@ -193,11 +191,9 @@ releases:
     namespace: mail
     chart: docker-mailserver/docker-mailserver
     version: 6.0.0
-    # Traefik crds for ingress route for mail:
-    #
-    # curl -sSL https://raw.githubusercontent.com/traefik/traefik/v2.9/docs/content/reference/dynamic-configuration/kubernetes-crd-definition-v1.yml -o traefik-crds.yaml
-    # kubectl apply -f traefik-crds.yaml
-    # 
+    # Mail ingresses use the standard Ingress resource (ingressClassName:
+    # traefik). Traefik itself is owned by k3s — its CRDs ship with the
+    # bundled traefik-crd HelmChart; no manual CRD applies are needed.
     needs:
       - cert-manager/cert-manager
       - kube-system/reloader
