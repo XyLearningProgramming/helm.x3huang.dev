@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: trojan-{{ include "free.fullname" . }}
+  name: singbox-{{ include "free.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "free.labels" . | nindent 4 }}
@@ -13,5 +13,5 @@ spec:
       protocol: {{ .Values.service.protocol }}
       name: {{ .Values.service.portName }}
   selector:
-    app.kubernetes.io/name: trojan-{{ include "free.name" . }}
+    app.kubernetes.io/name: singbox-{{ include "free.name" . }}
     {{- include "free.selectorLabels" . | nindent 4 }}

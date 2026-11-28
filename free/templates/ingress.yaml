@@ -1,7 +1,7 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRouteTCP
 metadata:
-  name: trojan-{{ include "free.fullname" . }}
+  name: singbox-{{ include "free.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "free.labels" . | nindent 4 }}
@@ -12,7 +12,7 @@ spec:
   routes:
     - match: HostSNI(`free.{{ .Values.DOMAIN }}`)
       services:
-        - name: trojan-{{ include "free.fullname" . }}
+        - name: singbox-{{ include "free.fullname" . }}
           port: {{ .Values.service.port }}
   tls:
     passthrough: true
