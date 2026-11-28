@@ -1,3 +1,6 @@
+{{- /* Discover all REDIS_USER_<SUFFIX> keys */ -}}
+{{- $jsonKeys := exec "sh" (list "-c" "kubectl get secret -n db helmfile-secret-db -o json | jq -r '.data | keys[] | select(startswith(\"REDIS_USER_\"))'") }}
+{{- $userKeys := splitList "\n" ($jsonKeys | trim) }}
 
 # redis.values.yaml.gotmpl
 # Redis configuration optimized for <200M memory VPS
@@ -35,32 +38,12 @@ auth:
   existingSecretPasswordKey: "REDIS_PASSWORD"
   usePasswordFiles: true
   usePasswordFileFromSecret: true
-  # Support for multiple users via ACL
+  # Chart 28 delivers the ACL via a `users.acl` file subPath nested under the
+  # `config` ConfigMap volume. kubelet (k3s 1.32) pre-creates that nested
+  # mountpoint as a directory, so the container fails with "not a directory".
+  # ACL users are therefore declared inline in `commonConfiguration` below.
   acl:
-    enabled: true
-    {{- /* Discover all REDIS_USER_<SUFFIX> keys */ -}}
-    {{- $jsonKeys := exec "sh" (list "-c" "kubectl get secret -n db helmfile-secret-db -o json | jq -r '.data | keys[] | select(startswith(\"REDIS_USER_\"))'") }}
-    {{- $userKeys := splitList "\n" ($jsonKeys | trim) }}
-    {{- if $userKeys }}
-    users:
-      {{- range $i, $uk := $userKeys }}
-      {{- if ne $uk "" }}
-      {{- $suffix := trimPrefix "REDIS_USER_" $uk }}
-      {{- $fetchUserCmd := printf "kubectl get secret -n db helmfile-secret-db -o jsonpath='{.data.REDIS_USER_%s}' | base64 -d" $suffix }}
-      {{- $fetchPassCmd := printf "kubectl get secret -n db helmfile-secret-db -o jsonpath='{.data.REDIS_PASSWORD_%s}' | base64 -d" $suffix }}
-      {{- $userVal := exec "sh" (list "-c" $fetchUserCmd) | trim }}
-      {{- $passVal := exec "sh" (list "-c" $fetchPassCmd) | trim }}
-      - username: "{{ $userVal }}"
-        password: "{{ $passVal }}"
-        enabled: "on"
-        commands: "+@all"
-        keys: "~*"
-        channels: "&*"
-      {{- end }}
-      {{- end }}
-    {{- else }}
-    users: []
-    {{- end }}
+    enabled: false
 
 # Master (standalone) configuration
 master:
@@ -169,3 +152,13 @@ commonConfiguration: |-
   maxmemory-policy volatile-lru
   # Disable some features to save memory
   activedefrag no
+  # ACL users (password stored as SHA-256 hash, never plaintext). The default
+  # user keeps the password from the auth secret.
+  {{- range $uk := $userKeys }}
+  {{- if ne $uk "" }}
+  {{- $suffix := trimPrefix "REDIS_USER_" $uk }}
+  {{- $userVal := exec "sh" (list "-c" (printf "kubectl get secret -n db helmfile-secret-db -o jsonpath='{.data.REDIS_USER_%s}' | base64 -d" $suffix)) | trim }}
+  {{- $passVal := exec "sh" (list "-c" (printf "kubectl get secret -n db helmfile-secret-db -o jsonpath='{.data.REDIS_PASSWORD_%s}' | base64 -d" $suffix)) | trim }}
+  user {{ $userVal }} on #{{ $passVal | sha256sum }} ~* &* +@all
+  {{- end }}
+  {{- end }}
