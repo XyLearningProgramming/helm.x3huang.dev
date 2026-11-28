@@ -33,23 +33,14 @@ repositories:
     url: https://stakater.github.io/stakater-charts
 ---
 releases:
-# Traefik: replace the default k3s traefik with explicit config
-  - name: traefik
-    namespace: kube-system
-    chart: traefik/traefik
-    version: 36.0.0
-    # Traefik crds ref: https://github.com/traefik/traefik-helm-chart
-    #
-    # helm install traefik-crds traefik/traefik-crds
-    values:
-      - values/{{ .Environment.Name }}.yaml.gotmpl
-      - traefik/values.yaml.gotmpl
+# Traefik is owned by k3s (HelmChart + HelmChartConfig in kube-system).
+# Do not manage it here. See traefik/README.md.
 
 # Replicator: copy tls secrets to different ns
   - name: kubernetes-replicator
     namespace: kube-system                # where you want the controller to live
     chart: mittwald/kubernetes-replicator
-    version: "2.5.1"                      # pin to a specific chart version if you like
+    version: "2.12.6"                     # pin to a specific chart version if you like
     values:
       - resources:
           limits:
@@ -65,7 +56,7 @@ releases:
   - name: reloader
     namespace: kube-system
     chart: stakater/reloader
-    version: "2.2.9"
+    version: "2.2.21"
     values:
       - reloader:
           watchGlobally: true
@@ -82,13 +73,13 @@ releases:
   - name: cert-manager
     namespace: cert-manager
     chart: jetstack/cert-manager
-    version: v1.11.0
+    version: v1.20.5
     needs:
-      - kube-system/traefik
       - kube-system/kubernetes-replicator
     installed: true
     values:
-      - values/{{ .Environment.Name }}.yaml.gotmpl
+      # Chart v1.20.x has a strict values schema; do not pass the shared
+      # environment values (DOMAIN, *_NODE, ...) that cert-manager does not consume.
       - namespace: cert-manager
       - resources:
           limits:
@@ -115,8 +106,8 @@ releases:
               memory: 16Mi
     set:
       # one time install crd first
-      # kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml
-      - name: installCRDs
+      # kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.5/cert-manager.crds.yaml
+      - name: crds.enabled
         value: false
       - name: prometheus.enabled
         value: false
@@ -165,22 +156,20 @@ releases:
   - name: kube-prom-stack
     namespace: monitoring
     chart: prometheus-community/kube-prometheus-stack
-    needs:
-      - kube-system/traefik
-    version: "72.6.3"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
+    version: "93.9.0"
     # install crds
     # 
     # ref: https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack/10.0.1
     # 
-    # kubectl apply -f https://github.com/prometheus-operator/prometheus-operator/releases/download/v0.82.2/stripped-down-crds.yaml
+    # kubectl apply -f https://github.com/prometheus-operator/prometheus-operator/releases/download/v0.95.2/stripped-down-crds.yaml
     #
-    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.82/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
-    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.82/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
-    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.82/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
-    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.82/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
-    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.82/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
-    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.82/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
-    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.82/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.95/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.95/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.95/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.95/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.95/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.95/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+    # kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.95/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
     values:
       - values/{{ .Environment.Name }}.yaml.gotmpl
       - prom-stack/values.yaml.gotmpl
@@ -192,6 +181,7 @@ releases:
   - name: redis
     namespace: db
     chart: bitnami/redis
+    version: "28.3.16"
     needs:
       - db/db-storage
     values:
@@ -202,7 +192,7 @@ releases:
   - name: mailserver
     namespace: mail
     chart: docker-mailserver/docker-mailserver
-    version: 4.2.1
+    version: 6.0.0
     # Traefik crds for ingress route for mail:
     #
     # curl -sSL https://raw.githubusercontent.com/traefik/traefik/v2.9/docs/content/reference/dynamic-configuration/kubernetes-crd-definition-v1.yml -o traefik-crds.yaml
@@ -210,7 +200,6 @@ releases:
     # 
     needs:
       - cert-manager/cert-manager
-      - kube-system/traefik
       - kube-system/reloader
       - mail/mail-storage
       - db/redis
@@ -222,9 +211,7 @@ releases:
   - name: loki-stack
     namespace: monitoring
     chart: grafana/loki-stack
-    needs:
-      - kube-system/traefik
-    version: "2.10.2"              # match latest in helmfile.lock :contentReference[oaicite:3]{index=3}
+    version: "2.10.3"
     values:
       - values/{{ .Environment.Name }}.yaml.gotmpl
       - loki-stack/values.yaml.gotmpl
