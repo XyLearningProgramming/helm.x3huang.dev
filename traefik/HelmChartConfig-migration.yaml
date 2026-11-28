@@ -58,7 +58,11 @@ spec:
         service:
           enabled: true
 
-    # Mail ports. IngressRouteTCP binds proxy ports internally.
+    # Mail ports. IngressRouteTCP binds proxy ports internally (and sends PROXY v2
+    # to the mailserver). Do NOT set `proxyProtocol.trustedIPs` on these entrypoints:
+    # it makes Traefik wait for an inbound PROXY header from every client, which
+    # blocks server-first protocols (SMTP/IMAP/POP3 banner never arrives). Nothing
+    # in front of Traefik sends PROXY (k3s klipper-lb does not).
     ports:
       mail-smtp:
         port: 25
@@ -66,108 +70,103 @@ spec:
           default: true
         exposedPort: 25
         protocol: TCP
-        proxyProtocol:
-          trustedIPs: ["0.0.0.0/0"]
       mail-sb:
         port: 587
         expose:
           default: true
         exposedPort: 587
         protocol: TCP
-        proxyProtocol:
-          trustedIPs: ["0.0.0.0/0"]
       mail-sbs:
         port: 465
         expose:
           default: true
         exposedPort: 465
         protocol: TCP
-        proxyProtocol:
-          trustedIPs: ["0.0.0.0/0"]
       mail-imap:
         port: 143
         expose:
           default: true
         exposedPort: 143
         protocol: TCP
-        proxyProtocol:
-          trustedIPs: ["0.0.0.0/0"]
       mail-imaps:
         port: 993
         expose:
           default: true
         exposedPort: 993
         protocol: TCP
-        proxyProtocol:
-          trustedIPs: ["0.0.0.0/0"]
       mail-pop3:
         port: 110
         expose:
           default: true
         exposedPort: 110
         protocol: TCP
-        proxyProtocol:
-          trustedIPs: ["0.0.0.0/0"]
       mail-pop3s:
         port: 995
         expose:
           default: true
         exposedPort: 995
         protocol: TCP
-        proxyProtocol:
-          trustedIPs: ["0.0.0.0/0"]
 
-    # Cloudflare edge IPs allowed to set forwarded headers (refresh periodically).
-    web:
-      forwardedHeaders:
-        trustedIPs:
-          - 173.245.48.0/20
-          - 103.21.244.0/22
-          - 103.22.200.0/22
-          - 103.31.4.0/22
-          - 141.101.64.0/18
-          - 108.162.192.0/18
-          - 190.93.240.0/20
-          - 188.114.96.0/20
-          - 197.234.240.0/22
-          - 198.41.128.0/17
-          - 162.158.0.0/15
-          - 104.16.0.0/13
-          - 104.24.0.0/14
-          - 172.64.0.0/13
-          - 131.0.72.0/22
-          - 2400:cb00::/32
-          - 2606:4700::/32
-          - 2803:f800::/32
-          - 2405:b500::/32
-          - 2405:8100::/32
-          - 2a06:98c0::/29
-          - 2c0f:f248::/32
-    websecure:
-      forwardedHeaders:
-        trustedIPs:
-          - 173.245.48.0/20
-          - 103.21.244.0/22
-          - 103.22.200.0/22
-          - 103.31.4.0/22
-          - 141.101.64.0/18
-          - 108.162.192.0/18
-          - 190.93.240.0/20
-          - 188.114.96.0/20
-          - 197.234.240.0/22
-          - 198.41.128.0/17
-          - 162.158.0.0/15
-          - 104.16.0.0/13
-          - 104.24.0.0/14
-          - 172.64.0.0/13
-          - 131.0.72.0/22
-          - 2400:cb00::/32
-          - 2606:4700::/32
-          - 2803:f800::/32
-          - 2405:b500::/32
-          - 2405:8100::/32
-          - 2a06:98c0::/29
-          - 2c0f:f248::/32
+      # Cloudflare edge IPs allowed to set forwarded headers (refresh periodically).
+      # Must live under `ports:` (chart schema: ports.<entrypoint>.forwardedHeaders).
+      #
+      # asDefault: with no entrypoint marked default, Traefik treats ALL entrypoints
+      # (including the mail ones) as defaults, so HTTPS Ingresses attach to them and
+      # Traefik must peek client bytes before connecting upstream. That stalls
+      # server-first protocols (SMTP 25/587, IMAP 143, POP3 110: no banner until the
+      # client speaks). Only web/websecure may be default entrypoints.
+      web:
+        asDefault: true
+        forwardedHeaders:
+          trustedIPs:
+            - 173.245.48.0/20
+            - 103.21.244.0/22
+            - 103.22.200.0/22
+            - 103.31.4.0/22
+            - 141.101.64.0/18
+            - 108.162.192.0/18
+            - 190.93.240.0/20
+            - 188.114.96.0/20
+            - 197.234.240.0/22
+            - 198.41.128.0/17
+            - 162.158.0.0/15
+            - 104.16.0.0/13
+            - 104.24.0.0/14
+            - 172.64.0.0/13
+            - 131.0.72.0/22
+            - 2400:cb00::/32
+            - 2606:4700::/32
+            - 2803:f800::/32
+            - 2405:b500::/32
+            - 2405:8100::/32
+            - 2a06:98c0::/29
+            - 2c0f:f248::/32
+      websecure:
+        asDefault: true
+        forwardedHeaders:
+          trustedIPs:
+            - 173.245.48.0/20
+            - 103.21.244.0/22
+            - 103.22.200.0/22
+            - 103.31.4.0/22
+            - 141.101.64.0/18
+            - 108.162.192.0/18
+            - 190.93.240.0/20
+            - 188.114.96.0/20
+            - 197.234.240.0/22
+            - 198.41.128.0/17
+            - 162.158.0.0/15
+            - 104.16.0.0/13
+            - 104.24.0.0/14
+            - 172.64.0.0/13
+            - 131.0.72.0/22
+            - 2400:cb00::/32
+            - 2606:4700::/32
+            - 2803:f800::/32
+            - 2405:b500::/32
+            - 2405:8100::/32
+            - 2a06:98c0::/29
+            - 2c0f:f248::/32
 
     ingressClass:
       enabled: true
